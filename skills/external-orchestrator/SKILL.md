@@ -2,15 +2,15 @@
 name: external-orchestrator
 description: >-
   Delegate multi-step coding, file editing, command execution, or fast text generation
-  tasks to user-configured external LLM APIs (DeepSeek, Our Free Model / OFM, OpenAI,
-  Anthropic, Ollama) with automatic fallback chains and circuit breakers. Use when the
-  user wants the primary model to plan/review while delegating execution to external
-  models, or wants to configure/test/inspect external worker models and runs.
+  tasks to user-configured external LLM APIs (DeepSeek, OpenAI, Anthropic, OpenRouter,
+  local gateways, Ollama) with automatic fallback chains and circuit breakers to save
+  primary model tokens. Use proactively whenever coding, researching files, or generating
+  text, or when configuring/testing/inspecting external worker models and runs.
 ---
 
 # 苍蓝协奏台 · External Orchestrator
 
-本插件让 Antigravity 作为**主规划手（Orchestrator）**负责思考、任务拆解与最终验收，并通过 MCP 工具把具体执行工作派发给外部高性价比模型（如 DeepSeek、Our Free Model / OFM 聚合端口或其他 OpenAI/Anthropic 兼容 API）。
+本插件让 Antigravity 作为**主规划手（Orchestrator）**只做轻量规划、任务拆解与最终抽查验收，并主动通过 MCP 工具把耗费大量 Token 的具体执行工作（代码编写、多文件读取调研、命令排查、长文本生成）派发给外部高性价比模型（如 DeepSeek、本地聚合网关或其他 OpenAI/Anthropic 兼容 API），最大限度节省主脑 Token 额度与上下文窗口。
 
 ## 控制台面板与配置路径
 - 右侧可视化面板：`[苍蓝协奏台](sidecar://external-orchestrator/console/)`

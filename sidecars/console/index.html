@@ -452,7 +452,7 @@
           </div>
           <div class="field" style="margin-bottom:0;">
             <label>快速过滤下方模型下拉选项</label>
-            <input id="routing-model-filter" type="text" placeholder="🔍 输入关键词过滤（如 deepseek / ofm / glm）..." oninput="applyRoutingModelFilter(this.value)" />
+            <input id="routing-model-filter" type="text" placeholder="🔍 输入关键词过滤（如 deepseek / glm / claude）..." oninput="applyRoutingModelFilter(this.value)" />
           </div>
         </div>
       </div>
@@ -596,11 +596,11 @@
       <div class="grid-2" style="gap:10px;">
         <div class="field">
           <label>渠道名称 *</label>
-          <input id="pm-name" type="text" placeholder="例如：DeepSeek / OFM 本地" />
+          <input id="pm-name" type="text" placeholder="例如：DeepSeek / 本地聚合网关" />
         </div>
         <div class="field">
           <label>标签（Tag）</label>
-          <input id="pm-tag" type="text" placeholder="例如：官方 / OFM聚合 / 自定义" />
+          <input id="pm-tag" type="text" placeholder="例如：官方 / 本地聚合 / 自定义" />
         </div>
         <div class="field">
           <label>接口协议 *</label>
@@ -946,8 +946,8 @@
         document.getElementById("pm-baseurl").value = src.baseUrl || "";
         document.getElementById("pm-apikey").value = "";
         document.getElementById("pm-headers").value = "";
-        document.getElementById("pm-key-hint").textContent = src.preset === "ofm"
-          ? "若 OFM 转发开启了密钥校验，请填入 OFM 面板里的转发 Key；无校验可留空。"
+        document.getElementById("pm-key-hint").textContent = src.preset === "local-gateway"
+          ? "若本地转发网关开启了密钥校验，请填入对应转发 Key；无校验可留空。"
           : "密钥将安全保存在本地 ~/.gemini/external-orchestrator/config.json";
         document.getElementById("pm-clearkey-wrap").classList.add("hidden");
         modalModels = [...(src.models || [])];

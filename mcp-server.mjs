@@ -17,7 +17,7 @@ const TOOLS = [
   },
   {
     name: "worker_execute",
-    description: "将多步代码编写、文件阅读/修改、文本批处理或命令检查任务委派给外部执行手模型（如 DeepSeek / OFM），自动完成多步工具调用并返回改动摘要。",
+    description: "将多步代码编写、文件阅读/修改、文本批处理或命令检查任务委派给外部执行手模型（如 DeepSeek / OpenAI 兼容渠道），自动完成多步工具调用并返回改动摘要。",
     inputSchema: {
       type: "object",
       required: ["task", "cwd"],
@@ -58,7 +58,7 @@ const TOOLS = [
       type: "object",
       required: ["provider"],
       properties: {
-        provider: { type: "string", description: "渠道 ID（如 deepseek / ofm）" },
+        provider: { type: "string", description: "渠道 ID（如 deepseek / local-gateway）" },
         model: { type: "string", description: "可选：测试用的特定模型 ID" }
       }
     }
