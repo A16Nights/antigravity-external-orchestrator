@@ -1,0 +1,1569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>苍蓝协奏台</title>
+  <style>
+    :root {
+      --bg: #131622;
+      --panel: #1b1f30;
+      --panel-2: #23283d;
+      --panel-hover: #282f48;
+      --border: #2e354d;
+      --text: #eef1f8;
+      --muted: #8e98b4;
+      --accent: #7c9cff;
+      --accent-2: #5b7cfa;
+      --ok: #3ddc97;
+      --warn: #f5b942;
+      --danger: #ff6b7a;
+      --ink: #ffffff;
+      --pill-bg: rgba(142, 152, 180, 0.14);
+    }
+    [data-theme="light"] {
+      --bg: #f3f5fb;
+      --panel: #ffffff;
+      --panel-2: #eef2fa;
+      --panel-hover: #e6ecf8;
+      --border: #d7dfef;
+      --text: #182032;
+      --muted: #5c6b86;
+      --accent: #4c6ef5;
+      --accent-2: #3b5bdb;
+      --ok: #0ca678;
+      --warn: #d97706;
+      --danger: #e03131;
+      --ink: #ffffff;
+      --pill-bg: rgba(92, 107, 134, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    button, input, select, textarea { font-family: inherit; font-size: 12.5px; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand h1 { margin: 0; font-size: 14.5px; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(124, 156, 255, 0.16);
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .badge.ok { background: rgba(61, 220, 151, 0.16); color: var(--ok); }
+    .badge.warn { background: rgba(245, 185, 66, 0.18); color: var(--warn); }
+    .badge.danger { background: rgba(255, 107, 122, 0.18); color: var(--danger); }
+    .badge.neutral { background: var(--pill-bg); color: var(--muted); }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: var(--panel-hover); border-color: var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: var(--ink); }
+    .btn.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+    .btn.danger { color: var(--danger); border-color: transparent; background: rgba(255, 107, 122, 0.1); }
+    .btn.danger:hover:not(:disabled) { background: rgba(255, 107, 122, 0.2); border-color: var(--danger); }
+    .btn.sm { padding: 4px 9px; font-size: 12px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 6px 16px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      overflow-x: auto;
+    }
+    .tab {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 13px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    main { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    .hidden { display: none !important; }
+    .subtitle { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
+
+    /* Quick presets bar */
+    .presets-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .presets-label { color: var(--muted); font-size: 12px; margin-right: 4px; }
+
+    /* DSH-style provider rows */
+    .provider-list { display: flex; flex-direction: column; gap: 10px; }
+    .provider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.15s, background 0.15s;
+      flex-wrap: wrap;
+    }
+    .provider-row:hover { border-color: rgba(124, 156, 255, 0.55); }
+    .provider-row.disabled-row { opacity: 0.68; }
+    .provider-left { display: flex; flex-direction: column; gap: 4px; min-width: 220px; flex: 1; }
+    .provider-title-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .provider-name { font-size: 14px; font-weight: 600; }
+    .tag-pill {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--panel-2);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 6px rgba(61, 220, 151, 0.55); }
+    .dot.warn { background: var(--warn); }
+    .dot.danger { background: var(--danger); }
+    .dot.off { background: #6b7590; }
+
+    .provider-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .provider-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    /* Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 19px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #424963;
+      border-radius: 999px;
+      transition: 0.2s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 13px;
+      width: 13px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--ok); }
+    .switch input:checked + .slider:before { transform: translateX(15px); }
+
+    /* Cards & Grids */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .card h3 { margin: 0 0 10px; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    input[type="text"], input[type="password"], input[type="number"], select, textarea {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 7px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 76px; }
+    .hint { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+    /* Fallback chain chips */
+    .fb-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .fb-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 5px 9px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 12px;
+    }
+    .inline-row { display: flex; gap: 6px; align-items: center; }
+    .inline-row > *:first-child { flex: 1; }
+
+    /* Model chips inside modal */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .chip.default-chip { border-color: var(--ok); background: rgba(61, 220, 151, 0.14); color: var(--ok); }
+    .chip button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .chip button:hover { color: var(--danger); }
+
+    /* Runs list */
+    .run-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .run-card:hover { border-color: rgba(124, 156, 255, 0.55); }
+    .run-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .run-title { font-weight: 600; font-size: 13px; margin-top: 5px; word-break: break-word; }
+    .run-meta { font-size: 11.5px; color: var(--muted); margin-top: 5px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .run-detail {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      cursor: default;
+    }
+    pre.codebox {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      margin: 6px 0;
+      max-height: 360px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 18, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal {
+      width: 100%;
+      max-width: 620px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-head h2 { margin: 0; font-size: 15px; }
+    .modal-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .fetched-picker {
+      margin-top: 8px;
+      padding: 0 8px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .fetched-toolbar {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 8px 0 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .fetched-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .fetched-item:hover { background: var(--panel-2); }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--accent);
+      padding: 9px 14px;
+      border-radius: 9px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: 0.2s;
+      z-index: 99;
+      max-width: 360px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>✦ 苍蓝协奏台</h1>
+      <span id="summary-badge" class="badge">加载中...</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn sm" onclick="openConfigFile()" title="在资源管理器中定位 config.json">打开配置文件</button>
+      <button class="btn sm" onclick="copyWebUrl()" title="复制浏览器独立访问链接">复制全屏地址</button>
+      <button id="theme-btn" class="btn sm" onclick="toggleTheme()">🌙 暗色</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="providers" onclick="switchTab('providers')">模型渠道</button>
+    <button class="tab" data-tab="routing" onclick="switchTab('routing')">路由与容灾</button>
+    <button class="tab" data-tab="runs" onclick="switchTab('runs')">执行监控</button>
+    <button class="tab" data-tab="playground" onclick="switchTab('playground')">在线试跑</button>
+  </nav>
+
+  <main>
+    <!-- Tab 1: Providers -->
+    <section id="tab-providers">
+      <p class="subtitle">填入各提供商的 API 密钥或接入本地转发端口，主脑（Antigravity）即可按角色自动调度这些外部模型干活。</p>
+      <div class="presets-bar">
+        <span class="presets-label">快速添加渠道：</span>
+        <div id="preset-buttons" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <div id="providers-list" class="provider-list"></div>
+    </section>
+
+    <!-- Tab 2: Routing & Fallback & Safety -->
+    <section id="tab-routing" class="hidden">
+      <p class="subtitle">为不同任务角色指定首选外部模型与自动容灾备用链（Fallback）。当主渠道连续报错达到阈值时，断路器会暂时熔断并无缝切换下一顺位渠道。</p>
+      <div class="card">
+        <h3>
+          <span>默认调度角色</span>
+          <button class="btn primary sm" onclick="saveRoutingSettings()">保存全部设置</button>
+        </h3>
+        <div class="grid-2" style="gap:10px;align-items:end;">
+          <div class="field" style="margin-bottom:0;">
+            <label>未显式指定角色时的默认 Profile</label>
+            <select id="default-profile-select"></select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>快速过滤下方模型下拉选项</label>
+            <input id="routing-model-filter" type="text" placeholder="🔍 输入关键词过滤（如 deepseek / ofm / glm）..." oninput="applyRoutingModelFilter(this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <div id="profiles-grid" class="grid-2"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>
+            <span>断路器与实时熔断状态</span>
+            <button class="btn sm" onclick="resetBreakers()">重置全部熔断</button>
+          </h3>
+          <div class="grid-2" style="gap:8px;">
+            <div class="field">
+              <label>启用断路器</label>
+              <select id="cb-enabled">
+                <option value="true">开启（推荐）</option>
+                <option value="false">关闭</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>连续失败触发次数</label>
+              <input id="cb-threshold" type="number" min="1" max="20" />
+            </div>
+            <div class="field">
+              <label>冷却时间（秒）</label>
+              <input id="cb-cooldown" type="number" min="5" max="3600" />
+            </div>
+          </div>
+          <div id="breaker-status-box" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="card">
+          <h3><span>执行手沙箱与步数默认配置</span></h3>
+          <div class="grid-2" style="gap:8px;">
+            <div class="field">
+              <label>默认权限模式</label>
+              <select id="wk-mode">
+                <option value="readonly">readonly（仅只读探索）</option>
+                <option value="edit">edit（读写改文件，推荐）</option>
+                <option value="full">full（允许跑终端命令）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>默认最大循环步数</label>
+              <input id="wk-default-steps" type="number" min="1" max="100" />
+            </div>
+            <div class="field">
+              <label>单次任务步数上限</label>
+              <input id="wk-max-steps" type="number" min="5" max="100" />
+            </div>
+            <div class="field">
+              <label>命令执行超时（毫秒）</label>
+              <input id="wk-cmd-timeout" type="number" min="3000" max="300000" />
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:4px;font-size:12px;">
+            <input id="wk-allow-outside" type="checkbox" style="width:auto;" />
+            允许执行手读写工作区（cwd）以外的路径（默认关闭，更安全）
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+        <button class="btn primary" onclick="saveRoutingSettings()">保存路由与容灾策略</button>
+      </div>
+    </section>
+
+    <!-- Tab 3: Runs Monitoring -->
+    <section id="tab-runs" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <p class="subtitle" style="margin:0;">记录每次主脑派发给外部执行手的多步操作、Token 消耗、修改的文件及容灾切换情况。点击卡片展开完整轨迹。</p>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sm" onclick="refreshAll()">刷新记录</button>
+          <button class="btn danger sm" onclick="clearRuns()">清空历史</button>
+        </div>
+      </div>
+      <div id="runs-list"></div>
+    </section>
+
+    <!-- Tab 4: Playground -->
+    <section id="tab-playground" class="hidden">
+      <p class="subtitle">快速测试当前渠道、角色路由、Fallback 容灾链与模型输出效果（不修改任何本地文件）。</p>
+      <div class="card">
+        <div class="grid-2" style="gap:10px;">
+          <div class="field">
+            <label>调度方式</label>
+            <select id="pg-target-mode" onchange="togglePgMode()">
+              <option value="profile">按路由角色（带自动 Fallback）</option>
+              <option value="direct">指定具体渠道与模型</option>
+            </select>
+          </div>
+          <div id="pg-profile-wrap" class="field">
+            <label>选择路由角色</label>
+            <select id="pg-profile"></select>
+          </div>
+          <div id="pg-direct-wrap" class="field hidden">
+            <label>选择具体模型（渠道:模型）</label>
+            <input id="pg-model-filter" type="text" placeholder="🔍 过滤模型..." style="margin-bottom:6px;" oninput="applyPgModelFilter(this.value)" />
+            <select id="pg-model"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>System Prompt（可选）</label>
+          <input id="pg-system" type="text" placeholder="例如：你是一个精简的代码助理，用中文简明作答。" />
+        </div>
+        <div class="field">
+          <label>测试输入 Prompt</label>
+          <textarea id="pg-prompt" rows="4" placeholder="输入一段提示词来试试看，例如：用 3 句话总结冒泡排序的时间复杂度。"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button id="pg-run-btn" class="btn primary" onclick="runPlayground()">▶ 发送试跑</button>
+        </div>
+      </div>
+      <div id="pg-result-card" class="card hidden">
+        <h3>
+          <span>试跑结果</span>
+          <span id="pg-meta-badges" style="display:flex;gap:6px;flex-wrap:wrap;"></span>
+        </h3>
+        <div id="pg-reasoning-wrap" class="hidden">
+          <details>
+            <summary style="cursor:pointer;color:var(--muted);font-size:12px;">展开推理过程 (Reasoning)</summary>
+            <pre id="pg-reasoning" class="codebox"></pre>
+          </details>
+        </div>
+        <pre id="pg-output" class="codebox"></pre>
+        <div id="pg-attempts" class="hint"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Provider Modal -->
+  <div id="provider-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeProviderModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="pm-title">编辑模型渠道</h2>
+        <button class="btn sm" onclick="closeProviderModal()">✕</button>
+      </div>
+      <input type="hidden" id="pm-id" />
+      <input type="hidden" id="pm-preset" />
+      <div class="grid-2" style="gap:10px;">
+        <div class="field">
+          <label>渠道名称 *</label>
+          <input id="pm-name" type="text" placeholder="例如：DeepSeek / OFM 本地" />
+        </div>
+        <div class="field">
+          <label>标签（Tag）</label>
+          <input id="pm-tag" type="text" placeholder="例如：官方 / OFM聚合 / 自定义" />
+        </div>
+        <div class="field">
+          <label>接口协议 *</label>
+          <select id="pm-protocol">
+            <option value="openai">OpenAI 兼容 (/chat/completions)</option>
+            <option value="anthropic">Anthropic 兼容 (/v1/messages)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>请求超时（毫秒）</label>
+          <input id="pm-timeout" type="number" min="5000" max="600000" value="120000" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Base URL *</label>
+        <input id="pm-baseurl" type="text" placeholder="例如：https://api.deepseek.com/v1 或 http://127.0.0.1:18899/v1" />
+        <div class="hint">支持自动补全 /v1/chat/completions，避免出现重复 /v1/v1 路径。</div>
+      </div>
+      <div class="field">
+        <label>API Key</label>
+        <input id="pm-apikey" type="password" autocomplete="off" placeholder="填入 API 密钥（本地 Ollama 可留空）" />
+        <div id="pm-key-hint" class="hint"></div>
+        <label id="pm-clearkey-wrap" class="hidden" style="display:flex;align-items:center;gap:6px;margin-top:4px;cursor:pointer;font-size:12px;">
+          <input id="pm-clearkey" type="checkbox" style="width:auto;" /> 清空已保存的密钥
+        </label>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>可用模型列表（点击设为默认模型）</span>
+          <button type="button" class="btn sm" onclick="fetchModelsInModal()">↻ 从接口拉取模型</button>
+        </label>
+        <div class="inline-row" style="margin-bottom:6px;">
+          <input id="pm-new-model" type="text" placeholder="手动输入模型 ID 后点添加，如 deepseek-chat" onkeydown="if(event.key==='Enter'){event.preventDefault();addModalModel();}" />
+          <button type="button" class="btn sm" onclick="addModalModel()">+ 添加</button>
+        </div>
+        <div id="pm-selected-filter-bar" class="inline-row hidden" style="margin-bottom:6px;">
+          <input id="pm-selected-search" type="text" placeholder="筛选已添加的模型..." oninput="modalSelectedQuery=this.value;renderModalModels();" />
+          <button type="button" class="btn danger sm" onclick="clearModalModels()">清空列表</button>
+        </div>
+        <div id="pm-models-chips" class="chips"></div>
+        <div id="pm-fetched-box" class="fetched-picker hidden"></div>
+      </div>
+      <div class="field">
+        <label>自定义附加请求头 Headers（可选 JSON）</label>
+        <textarea id="pm-headers" rows="2" placeholder='例如：{"HTTP-Referer":"https://example.com"}'></textarea>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeProviderModal()">取消</button>
+        <button class="btn primary" onclick="saveProviderModal()">保存渠道</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const TOKEN = params.get("token") || "";
+    let state = { config: { providers: [], routing: { profiles: {} }, circuitBreaker: {}, worker: {} }, presets: [], breakerStates: {}, runs: [], configPath: "", webUrl: "" };
+    let modalModels = [];
+    let modalDefaultModel = "";
+    let modalFetchedModels = [];
+    let modalFetchedQuery = "";
+    let modalSelectedQuery = "";
+    let routingFilterQuery = "";
+    let pgModelFilterQuery = "";
+    let expandedRunIds = new Set();
+    let runDetailsCache = {};
+
+    function matchesKeywords(text, query) {
+      const q = String(query || "").trim().toLowerCase();
+      if (!q) return true;
+      const lower = String(text || "").toLowerCase();
+      const tokens = q.split(/\s+/).filter(Boolean);
+      return tokens.every((t) => lower.includes(t));
+    }
+
+    function api(url, opts = {}) {
+      const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+      if (TOKEN) headers["X-Codeium-Sidecar-Token"] = TOKEN;
+      return fetch(url, Object.assign({}, opts, { headers })).then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+        return data;
+      });
+    }
+
+    function toast(msg, isError = false) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.borderColor = isError ? "var(--danger)" : "var(--accent)";
+      el.classList.add("show");
+      clearTimeout(window._eoToastTimer);
+      window._eoToastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+    }
+
+    function applyTheme(t) {
+      const mode = t === "light" ? "light" : "dark";
+      if (mode === "light") document.documentElement.setAttribute("data-theme", "light");
+      else document.documentElement.removeAttribute("data-theme");
+      document.getElementById("theme-btn").textContent = mode === "light" ? "☀ 亮色" : "🌙 暗色";
+      try { localStorage.setItem("eo_console_theme", mode); } catch {}
+    }
+
+    function toggleTheme() {
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      applyTheme(isLight ? "dark" : "light");
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+      ["providers", "routing", "runs", "playground"].forEach((t) => {
+        document.getElementById("tab-" + t).classList.toggle("hidden", t !== name);
+      });
+      if (name === "runs") refreshAll();
+    }
+
+    function copyWebUrl() {
+      const url = state.webUrl || location.href;
+      navigator.clipboard?.writeText(url).then(() => toast("已复制全屏访问地址")).catch(() => toast(url));
+    }
+
+    async function openConfigFile() {
+      try {
+        const res = await api("/api/open-config", { method: "POST", body: "{}" });
+        toast("配置文件位置：" + res.path);
+      } catch (e) {
+        toast("打开失败：" + e.message, true);
+      }
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "-";
+      const d = new Date(ts);
+      return d.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function getAllModelOptions() {
+      const opts = [];
+      for (const p of state.config.providers || []) {
+        const models = (p.models && p.models.length) ? p.models : (p.defaultModel ? [p.defaultModel] : []);
+        for (const m of models) {
+          opts.push({
+            value: `${p.id}:${m}`,
+            label: `${p.name} / ${m}${p.enabled ? "" : " (未启用)"}`,
+            enabled: p.enabled
+          });
+        }
+      }
+      return opts;
+    }
+
+    async function refreshAll() {
+      state = await api("/api/state");
+      renderAll();
+    }
+
+    function renderAll() {
+      const providers = state.config.providers || [];
+      const activeCount = providers.filter((p) => p.enabled && (p.hasApiKey || /127\.0\.0\.1|localhost/.test(p.baseUrl))).length;
+      const badge = document.getElementById("summary-badge");
+      badge.textContent = `${activeCount}/${providers.length} 渠道就绪`;
+      badge.className = "badge " + (activeCount > 0 ? "ok" : "warn");
+
+      renderPresetButtons();
+      renderProviders();
+      renderRouting();
+      renderRuns();
+      renderPlaygroundSelectors();
+    }
+
+    function renderPresetButtons() {
+      const box = document.getElementById("preset-buttons");
+      box.innerHTML = "";
+      for (const preset of state.presets || []) {
+        const btn = document.createElement("button");
+        btn.className = "btn sm";
+        btn.textContent = "+ " + preset.name;
+        btn.onclick = () => openProviderModal(null, preset);
+        box.appendChild(btn);
+      }
+      const customBtn = document.createElement("button");
+      customBtn.className = "btn primary sm";
+      customBtn.textContent = "+ 自定义渠道";
+      customBtn.onclick = () => openProviderModal(null, null);
+      box.appendChild(customBtn);
+    }
+
+    function isLocalUrl(u) {
+      return /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])/i.test(String(u || ""));
+    }
+
+    function renderProviders() {
+      const box = document.getElementById("providers-list");
+      box.innerHTML = "";
+      const providers = state.config.providers || [];
+      if (!providers.length) {
+        box.innerHTML = '<div class="card">还没有配置任何外部渠道，点上方快捷按钮添加一个吧~</div>';
+        return;
+      }
+
+      for (const p of providers) {
+        const br = state.breakerStates?.[p.id];
+        let dotClass = "off";
+        let statusText = "已停用";
+        if (p.enabled) {
+          if (br && br.isOpen) {
+            dotClass = "danger";
+            statusText = `熔断冷却中 (${br.remainingSec}s)`;
+          } else if (!p.hasApiKey && !isLocalUrl(p.baseUrl)) {
+            dotClass = "warn";
+            statusText = "待填入 API Key";
+          } else if (p.lastTest) {
+            dotClass = p.lastTest.ok ? "ok" : "danger";
+            statusText = p.lastTest.ok
+              ? `连通正常 · ${p.lastTest.latencyMs}ms (${p.lastTest.model})`
+              : `上次测试失败：${p.lastTest.message.slice(0, 60)}`;
+          } else {
+            dotClass = "ok";
+            statusText = p.hasApiKey ? `密钥 ${p.apiKeyMasked}` : "本地免密端口";
+          }
+        }
+
+        const row = document.createElement("div");
+        row.className = "provider-row" + (p.enabled ? "" : " disabled-row");
+        row.innerHTML = `
+          <div class="provider-left">
+            <div class="provider-title-line">
+              <span class="provider-name">${escapeHtml(p.name)}</span>
+              <span class="tag-pill">${escapeHtml(p.tag || "自定义")}</span>
+              <span class="dot ${dotClass}" title="${escapeHtml(statusText)}"></span>
+              <span style="font-size:12px;color:var(--muted);">${escapeHtml(statusText)}</span>
+            </div>
+            <div class="provider-sub">
+              <span>协议: ${escapeHtml(p.protocol)}</span>
+              <span>地址: ${escapeHtml(p.baseUrl)}</span>
+              <span>默认模型: ${escapeHtml(p.defaultModel || (p.models && p.models[0]) || "未设置")}</span>
+              <span>模型数: ${(p.models || []).length}</span>
+            </div>
+          </div>
+          <div class="provider-actions">
+            <label class="switch" title="启用/停用该渠道">
+              <input type="checkbox" ${p.enabled ? "checked" : ""} onchange="toggleProviderEnabled('${escapeHtml(p.id)}', this.checked)" />
+              <span class="slider"></span>
+            </label>
+            <button class="btn sm" onclick="testProviderAction('${escapeHtml(p.id)}', this)">测试</button>
+            <button class="btn sm" onclick="openProviderModal('${escapeHtml(p.id)}')">编辑</button>
+            <button class="btn danger sm" onclick="deleteProviderAction('${escapeHtml(p.id)}', '${escapeHtml(p.name)}')">删除</button>
+          </div>
+        `;
+        box.appendChild(row);
+      }
+    }
+
+    async function toggleProviderEnabled(id, enabled) {
+      try {
+        const res = await api("/api/provider/toggle", { method: "POST", body: JSON.stringify({ id, enabled }) });
+        state = res.state;
+        renderAll();
+        toast(enabled ? "已启用渠道" : "已停用渠道");
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    async function testProviderAction(id, btn) {
+      const old = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "测试中...";
+      try {
+        const res = await api("/api/provider/test", { method: "POST", body: JSON.stringify({ id }) });
+        state = res.state;
+        renderAll();
+        if (res.result.ok) {
+          toast(`✅ ${res.result.providerName} 连通正常 (${res.result.latencyMs}ms)`);
+        } else {
+          toast(`❌ ${res.result.providerName} 测试失败：${res.result.message}`, true);
+        }
+      } catch (e) {
+        toast("测试失败：" + e.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+      }
+    }
+
+    async function deleteProviderAction(id, name) {
+      if (!confirm(`确定删除渠道「${name}」吗？`)) return;
+      try {
+        const res = await api("/api/provider/delete", { method: "POST", body: JSON.stringify({ id }) });
+        state = res.state;
+        renderAll();
+        toast("已删除渠道：" + name);
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    // Provider Modal
+    function openProviderModal(providerId, presetObj) {
+      const modal = document.getElementById("provider-modal");
+      document.getElementById("pm-fetched-box").classList.add("hidden");
+      document.getElementById("pm-fetched-box").innerHTML = "";
+      document.getElementById("pm-new-model").value = "";
+      document.getElementById("pm-selected-search").value = "";
+      document.getElementById("pm-clearkey").checked = false;
+      modalFetchedModels = [];
+      modalFetchedQuery = "";
+      modalSelectedQuery = "";
+
+      if (providerId) {
+        const p = (state.config.providers || []).find((x) => x.id === providerId);
+        if (!p) return;
+        document.getElementById("pm-title").textContent = "编辑渠道 · " + p.name;
+        document.getElementById("pm-id").value = p.id;
+        document.getElementById("pm-preset").value = p.preset || "custom";
+        document.getElementById("pm-name").value = p.name;
+        document.getElementById("pm-tag").value = p.tag || "自定义";
+        document.getElementById("pm-protocol").value = p.protocol || "openai";
+        document.getElementById("pm-timeout").value = p.timeoutMs || 120000;
+        document.getElementById("pm-baseurl").value = p.baseUrl || "";
+        document.getElementById("pm-apikey").value = "";
+        document.getElementById("pm-headers").value = p.headers && Object.keys(p.headers).length ? JSON.stringify(p.headers) : "";
+        document.getElementById("pm-key-hint").textContent = p.hasApiKey
+          ? `当前已保存密钥：${p.apiKeyMasked}（留空则保持不变）`
+          : "当前未设置密钥，请填入（本地免密端口可留空）";
+        document.getElementById("pm-clearkey-wrap").classList.toggle("hidden", !p.hasApiKey);
+        modalModels = [...(p.models || [])];
+        modalDefaultModel = p.defaultModel || modalModels[0] || "";
+      } else {
+        const src = presetObj || { preset: "custom", name: "", tag: "自定义", protocol: "openai", baseUrl: "", models: [], defaultModel: "" };
+        document.getElementById("pm-title").textContent = src.name ? ("添加渠道 · " + src.name) : "添加自定义渠道";
+        document.getElementById("pm-id").value = "";
+        document.getElementById("pm-preset").value = src.preset || "custom";
+        document.getElementById("pm-name").value = src.name || "";
+        document.getElementById("pm-tag").value = src.tag || "自定义";
+        document.getElementById("pm-protocol").value = src.protocol || "openai";
+        document.getElementById("pm-timeout").value = 120000;
+        document.getElementById("pm-baseurl").value = src.baseUrl || "";
+        document.getElementById("pm-apikey").value = "";
+        document.getElementById("pm-headers").value = "";
+        document.getElementById("pm-key-hint").textContent = src.preset === "ofm"
+          ? "若 OFM 转发开启了密钥校验，请填入 OFM 面板里的转发 Key；无校验可留空。"
+          : "密钥将安全保存在本地 ~/.gemini/external-orchestrator/config.json";
+        document.getElementById("pm-clearkey-wrap").classList.add("hidden");
+        modalModels = [...(src.models || [])];
+        modalDefaultModel = src.defaultModel || modalModels[0] || "";
+      }
+      renderModalModels();
+      modal.classList.remove("hidden");
+    }
+
+    function closeProviderModal() {
+      document.getElementById("provider-modal").classList.add("hidden");
+    }
+
+    function renderModalModels() {
+      const filterBar = document.getElementById("pm-selected-filter-bar");
+      const searchInput = document.getElementById("pm-selected-search");
+      if (modalModels.length > 6) {
+        filterBar.classList.remove("hidden");
+        searchInput.placeholder = `筛选已添加的 ${modalModels.length} 个模型...`;
+      } else {
+        filterBar.classList.add("hidden");
+        if (modalSelectedQuery) {
+          modalSelectedQuery = "";
+          searchInput.value = "";
+        }
+      }
+
+      const box = document.getElementById("pm-models-chips");
+      box.innerHTML = "";
+      if (!modalModels.length) {
+        box.innerHTML = '<span class="hint">暂无模型，可点上方「从接口拉取模型」或手动输入添加。</span>';
+        if (modalFetchedModels.length) renderFetchedItems();
+        return;
+      }
+
+      const visible = modalModels.filter((m) => matchesKeywords(m, modalSelectedQuery));
+      if (!visible.length) {
+        box.innerHTML = '<span class="hint">没有匹配的已选模型。</span>';
+        if (modalFetchedModels.length) renderFetchedItems();
+        return;
+      }
+
+      for (const m of visible) {
+        const chip = document.createElement("span");
+        const isDef = m === modalDefaultModel;
+        chip.className = "chip" + (isDef ? " default-chip" : "");
+        chip.title = isDef ? "当前默认模型" : "点击设为默认模型";
+        chip.onclick = (e) => {
+          if (e.target.tagName === "BUTTON") return;
+          modalDefaultModel = m;
+          renderModalModels();
+        };
+        chip.innerHTML = `<span>${isDef ? "★ " : ""}${escapeHtml(m)}</span><button type="button" title="移除">×</button>`;
+        chip.querySelector("button").onclick = () => {
+          modalModels = modalModels.filter((x) => x !== m);
+          if (modalDefaultModel === m) modalDefaultModel = modalModels[0] || "";
+          renderModalModels();
+        };
+        box.appendChild(chip);
+      }
+      if (modalFetchedModels.length) renderFetchedItems();
+    }
+
+    function clearModalModels() {
+      if (!modalModels.length) return;
+      modalModels = [];
+      modalDefaultModel = "";
+      modalSelectedQuery = "";
+      document.getElementById("pm-selected-search").value = "";
+      renderModalModels();
+    }
+
+    function addModalModel() {
+      const inp = document.getElementById("pm-new-model");
+      const val = inp.value.trim();
+      if (!val) return;
+      for (const item of val.split(/[,，\n]+/)) {
+        const m = item.trim();
+        if (m && !modalModels.includes(m)) modalModels.push(m);
+      }
+      if (!modalDefaultModel && modalModels.length) modalDefaultModel = modalModels[0];
+      inp.value = "";
+      renderModalModels();
+    }
+
+    function renderFetchedModels() {
+      const box = document.getElementById("pm-fetched-box");
+      if (!modalFetchedModels.length) {
+        box.innerHTML = '<span class="hint" style="display:block;padding-top:8px;">接口返回了空的模型列表，请手动输入模型名。</span>';
+        return;
+      }
+      box.innerHTML = `
+        <div class="fetched-toolbar">
+          <input id="pm-fetched-search" type="text" placeholder="搜索模型（支持空格多关键词，如 deepseek free）..." value="${escapeHtml(modalFetchedQuery)}" />
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span id="pm-fetched-count" class="hint" style="margin:0;"></span>
+            <button type="button" class="btn sm" id="pm-add-filtered-btn"></button>
+          </div>
+        </div>
+        <div id="pm-fetched-items"></div>
+      `;
+      const searchEl = document.getElementById("pm-fetched-search");
+      searchEl.oninput = () => {
+        modalFetchedQuery = searchEl.value;
+        renderFetchedItems();
+      };
+      document.getElementById("pm-add-filtered-btn").onclick = () => {
+        const filtered = modalFetchedModels.filter((m) => matchesKeywords(m, modalFetchedQuery));
+        let addedCount = 0;
+        for (const m of filtered) {
+          if (!modalModels.includes(m)) {
+            modalModels.push(m);
+            addedCount++;
+          }
+        }
+        if (!modalDefaultModel && modalModels.length) modalDefaultModel = modalModels[0];
+        renderModalModels();
+        toast(addedCount > 0 ? `已导入 ${addedCount} 个模型` : "当前匹配模型已全部在列表中");
+      };
+      renderFetchedItems();
+      searchEl.focus();
+    }
+
+    function renderFetchedItems() {
+      const itemsEl = document.getElementById("pm-fetched-items");
+      const countEl = document.getElementById("pm-fetched-count");
+      const addBtn = document.getElementById("pm-add-filtered-btn");
+      if (!itemsEl || !countEl || !addBtn) return;
+
+      const filtered = modalFetchedModels.filter((m) => matchesKeywords(m, modalFetchedQuery));
+      const isFiltered = Boolean(modalFetchedQuery.trim());
+      countEl.textContent = isFiltered
+        ? `匹配 ${filtered.length} / ${modalFetchedModels.length} 个模型（点击可切换）`
+        : `拉取到 ${modalFetchedModels.length} 个模型（点击可切换）`;
+      addBtn.textContent = isFiltered ? `导入当前 ${filtered.length} 个` : "全部导入";
+      addBtn.disabled = filtered.length === 0;
+
+      itemsEl.innerHTML = "";
+      if (!filtered.length) {
+        itemsEl.innerHTML = '<div class="hint" style="padding:8px 4px;">没有匹配的模型，换个关键词试试~</div>';
+        return;
+      }
+
+      for (const m of filtered) {
+        const item = document.createElement("div");
+        item.className = "fetched-item";
+        const added = modalModels.includes(m);
+        item.innerHTML = `<span>${escapeHtml(m)}</span><span class="badge ${added ? "ok" : "neutral"}">${added ? "已添加" : "+ 添加"}</span>`;
+        item.onclick = () => {
+          const idx = modalModels.indexOf(m);
+          if (idx === -1) {
+            modalModels.push(m);
+            if (!modalDefaultModel) modalDefaultModel = m;
+          } else {
+            modalModels.splice(idx, 1);
+            if (modalDefaultModel === m) modalDefaultModel = modalModels[0] || "";
+          }
+          renderModalModels();
+        };
+        itemsEl.appendChild(item);
+      }
+    }
+
+    async function fetchModelsInModal() {
+      const baseUrl = document.getElementById("pm-baseurl").value.trim();
+      if (!baseUrl) {
+        toast("请先填写 Base URL", true);
+        return;
+      }
+      const box = document.getElementById("pm-fetched-box");
+      box.classList.remove("hidden");
+      box.innerHTML = '<span class="hint" style="display:block;padding-top:8px;">正在向接口请求模型列表...</span>';
+      try {
+        const res = await api("/api/provider/models", {
+          method: "POST",
+          body: JSON.stringify({
+            id: document.getElementById("pm-id").value || undefined,
+            protocol: document.getElementById("pm-protocol").value,
+            baseUrl,
+            apiKey: document.getElementById("pm-apikey").value,
+            clearApiKey: document.getElementById("pm-clearkey").checked,
+            headers: document.getElementById("pm-headers").value
+          })
+        });
+        modalFetchedModels = res.models || [];
+        modalFetchedQuery = "";
+        renderFetchedModels();
+      } catch (e) {
+        modalFetchedModels = [];
+        box.innerHTML = `<span class="hint" style="display:block;padding-top:8px;color:var(--danger);">拉取失败：${escapeHtml(e.message)}</span>`;
+      }
+    }
+
+    async function saveProviderModal() {
+      const payload = {
+        id: document.getElementById("pm-id").value || undefined,
+        preset: document.getElementById("pm-preset").value || "custom",
+        name: document.getElementById("pm-name").value.trim(),
+        tag: document.getElementById("pm-tag").value.trim() || "自定义",
+        protocol: document.getElementById("pm-protocol").value,
+        timeoutMs: Number(document.getElementById("pm-timeout").value) || 120000,
+        baseUrl: document.getElementById("pm-baseurl").value.trim(),
+        apiKey: document.getElementById("pm-apikey").value,
+        clearApiKey: document.getElementById("pm-clearkey").checked,
+        headers: document.getElementById("pm-headers").value.trim(),
+        models: modalModels,
+        defaultModel: modalDefaultModel
+      };
+      try {
+        const res = await api("/api/provider", { method: "POST", body: JSON.stringify(payload) });
+        state = res.state;
+        closeProviderModal();
+        renderAll();
+        toast("已保存渠道：" + res.provider.name);
+      } catch (e) {
+        toast("保存失败：" + e.message, true);
+      }
+    }
+
+    // Routing & Circuit Breaker & Worker settings
+    function buildModelSelectOptions(selectedValue, filterQuery = "") {
+      const opts = getAllModelOptions();
+      const filteredOpts = filterQuery
+        ? opts.filter((o) => matchesKeywords(`${o.value} ${o.label}`, filterQuery))
+        : opts;
+      const values = new Set(filteredOpts.map((o) => o.value));
+      let html = `<option value="">-- 请选择模型 --</option>`;
+      for (const o of filteredOpts) {
+        html += `<option value="${escapeHtml(o.value)}" ${o.value === selectedValue ? "selected" : ""}>${escapeHtml(o.label)}</option>`;
+      }
+      if (selectedValue && !values.has(selectedValue)) {
+        const existing = opts.find((o) => o.value === selectedValue);
+        const label = existing ? existing.label : `${selectedValue} (已缺失)`;
+        html += `<option value="${escapeHtml(selectedValue)}" selected>${escapeHtml(label)}</option>`;
+      }
+      return html;
+    }
+
+    function applyRoutingModelFilter(query) {
+      routingFilterQuery = query || "";
+      document.querySelectorAll(".prof-primary").forEach((sel) => {
+        const cur = sel.value;
+        sel.innerHTML = buildModelSelectOptions(cur, routingFilterQuery);
+      });
+      document.querySelectorAll(".fb-add-select").forEach((sel) => {
+        const cur = sel.value;
+        sel.innerHTML = buildModelSelectOptions(cur, routingFilterQuery);
+      });
+    }
+
+    function renderRouting() {
+      const routing = state.config.routing || { defaultProfile: "default", profiles: {} };
+      const defSel = document.getElementById("default-profile-select");
+      defSel.innerHTML = "";
+      for (const [key, prof] of Object.entries(routing.profiles || {})) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = `${prof.label || key} (${key})`;
+        opt.selected = key === routing.defaultProfile;
+        defSel.appendChild(opt);
+      }
+
+      const grid = document.getElementById("profiles-grid");
+      grid.innerHTML = "";
+      for (const [key, prof] of Object.entries(routing.profiles || {})) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.profileKey = key;
+        const fallbacks = Array.isArray(prof.fallbacks) ? prof.fallbacks : [];
+        card.innerHTML = `
+          <h3>
+            <span>${escapeHtml(prof.label || key)}</span>
+            <span class="badge neutral">${escapeHtml(key)}</span>
+          </h3>
+          <div class="field">
+            <label>首选模型 (Primary)</label>
+            <select class="prof-primary" data-profile="${escapeHtml(key)}">
+              ${buildModelSelectOptions(prof.primary || "", routingFilterQuery)}
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>备用容灾链 (Fallback 顺序)</label>
+            <div class="fb-list" data-fb-list="${escapeHtml(key)}"></div>
+            <div class="inline-row" style="margin-top:6px;">
+              <select class="fb-add-select" data-profile="${escapeHtml(key)}">
+                ${buildModelSelectOptions("", routingFilterQuery)}
+              </select>
+              <button type="button" class="btn sm" onclick="addFallback('${escapeHtml(key)}')">+ 添加备用</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+        renderFallbackItems(key, fallbacks);
+      }
+
+      const cb = state.config.circuitBreaker || {};
+      document.getElementById("cb-enabled").value = String(cb.enabled !== false);
+      document.getElementById("cb-threshold").value = cb.failureThreshold ?? 3;
+      document.getElementById("cb-cooldown").value = cb.cooldownSec ?? 60;
+
+      const brBox = document.getElementById("breaker-status-box");
+      const entries = Object.entries(state.breakerStates || {});
+      if (!entries.length) {
+        brBox.innerHTML = '<span class="badge ok">所有渠道健康，暂无失败或熔断记录</span>';
+      } else {
+        brBox.innerHTML = entries.map(([pid, st]) => `
+          <div class="fb-item" style="margin-bottom:4px;">
+            <span><strong>${escapeHtml(pid)}</strong> · 连续失败 ${st.consecutiveFailures} 次 ${st.isOpen ? `(冷却剩余 ${st.remainingSec}s)` : ""}</span>
+            <button type="button" class="btn sm" onclick="resetBreakers('${escapeHtml(pid)}')">重置</button>
+          </div>
+        `).join("");
+      }
+
+      const wk = state.config.worker || {};
+      document.getElementById("wk-mode").value = wk.defaultMode || "edit";
+      document.getElementById("wk-default-steps").value = wk.defaultMaxSteps ?? 18;
+      document.getElementById("wk-max-steps").value = wk.maxStepsLimit ?? 40;
+      document.getElementById("wk-cmd-timeout").value = wk.commandTimeoutMs ?? 60000;
+      document.getElementById("wk-allow-outside").checked = Boolean(wk.allowOutsideWorkspace);
+    }
+
+    function renderFallbackItems(profileKey, fallbacks) {
+      const box = document.querySelector(`[data-fb-list="${profileKey}"]`);
+      if (!box) return;
+      box.innerHTML = "";
+      box._fallbacks = [...fallbacks];
+      if (!fallbacks.length) {
+        box.innerHTML = '<span class="hint">暂无备用渠道，主模型失败时不会切换。</span>';
+        return;
+      }
+      fallbacks.forEach((spec, idx) => {
+        const row = document.createElement("div");
+        row.className = "fb-item";
+        row.innerHTML = `
+          <span>#${idx + 1} · ${escapeHtml(spec)}</span>
+          <div style="display:flex;gap:4px;">
+            <button type="button" class="btn sm" ${idx === 0 ? "disabled" : ""}>↑</button>
+            <button type="button" class="btn sm" ${idx === fallbacks.length - 1 ? "disabled" : ""}>↓</button>
+            <button type="button" class="btn danger sm">✕</button>
+          </div>
+        `;
+        const btns = row.querySelectorAll("button");
+        btns[0].onclick = () => moveFallback(profileKey, idx, -1);
+        btns[1].onclick = () => moveFallback(profileKey, idx, 1);
+        btns[2].onclick = () => removeFallback(profileKey, idx);
+        box.appendChild(row);
+      });
+    }
+
+    function addFallback(profileKey) {
+      const sel = document.querySelector(`.fb-add-select[data-profile="${profileKey}"]`);
+      const val = sel?.value;
+      if (!val) return;
+      const box = document.querySelector(`[data-fb-list="${profileKey}"]`);
+      const list = [...(box?._fallbacks || [])];
+      if (!list.includes(val)) list.push(val);
+      renderFallbackItems(profileKey, list);
+    }
+
+    function moveFallback(profileKey, idx, delta) {
+      const box = document.querySelector(`[data-fb-list="${profileKey}"]`);
+      const list = [...(box?._fallbacks || [])];
+      const next = idx + delta;
+      if (next < 0 || next >= list.length) return;
+      [list[idx], list[next]] = [list[next], list[idx]];
+      renderFallbackItems(profileKey, list);
+    }
+
+    function removeFallback(profileKey, idx) {
+      const box = document.querySelector(`[data-fb-list="${profileKey}"]`);
+      const list = [...(box?._fallbacks || [])];
+      list.splice(idx, 1);
+      renderFallbackItems(profileKey, list);
+    }
+
+    async function saveRoutingSettings() {
+      const routingProfiles = {};
+      const origProfiles = state.config.routing?.profiles || {};
+      for (const [key, orig] of Object.entries(origProfiles)) {
+        const primaryEl = document.querySelector(`.prof-primary[data-profile="${key}"]`);
+        const fbBox = document.querySelector(`[data-fb-list="${key}"]`);
+        routingProfiles[key] = {
+          label: orig.label || key,
+          primary: primaryEl ? primaryEl.value : orig.primary,
+          fallbacks: fbBox?._fallbacks || orig.fallbacks || []
+        };
+      }
+      const payload = {
+        routing: {
+          defaultProfile: document.getElementById("default-profile-select").value,
+          profiles: routingProfiles
+        },
+        circuitBreaker: {
+          enabled: document.getElementById("cb-enabled").value === "true",
+          failureThreshold: Number(document.getElementById("cb-threshold").value) || 3,
+          cooldownSec: Number(document.getElementById("cb-cooldown").value) || 60
+        },
+        worker: {
+          defaultMode: document.getElementById("wk-mode").value,
+          defaultMaxSteps: Number(document.getElementById("wk-default-steps").value) || 18,
+          maxStepsLimit: Number(document.getElementById("wk-max-steps").value) || 40,
+          commandTimeoutMs: Number(document.getElementById("wk-cmd-timeout").value) || 60000,
+          allowOutsideWorkspace: document.getElementById("wk-allow-outside").checked
+        }
+      };
+      try {
+        const res = await api("/api/routing", { method: "POST", body: JSON.stringify(payload) });
+        state = res.state;
+        renderAll();
+        toast("路由与容灾策略已保存");
+      } catch (e) {
+        toast("保存失败：" + e.message, true);
+      }
+    }
+
+    async function resetBreakers(providerId) {
+      try {
+        const res = await api("/api/breaker/reset", { method: "POST", body: JSON.stringify({ providerId }) });
+        state = res.state;
+        renderAll();
+        toast(providerId ? `已重置 ${providerId} 熔断状态` : "已重置全部断路器");
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    // Runs Monitoring
+    function renderRuns() {
+      const box = document.getElementById("runs-list");
+      box.innerHTML = "";
+      const runs = state.runs || [];
+      if (!runs.length) {
+        box.innerHTML = '<div class="card">暂无执行记录，主脑委派任务后这里会实时展示进度和结果~</div>';
+        return;
+      }
+      for (const r of runs) {
+        const card = document.createElement("div");
+        card.className = "run-card";
+        const statusClass = r.status === "completed" ? "ok" : r.status === "failed" ? "danger" : r.status === "running" ? "" : "warn";
+        const isOpen = expandedRunIds.has(r.id);
+        const detail = runDetailsCache[r.id];
+        card.innerHTML = `
+          <div class="run-head">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge ${statusClass}">${escapeHtml(r.status)}</span>
+              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
+              ${r.fallbackUsed ? '<span class="badge warn">已触发 Fallback</span>' : ""}
+              <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
+            </div>
+            <span style="font-size:11.5px;color:var(--muted);">${formatTime(r.startedAt)}</span>
+          </div>
+          <div class="run-title">${escapeHtml(r.taskPreview || "(无标题)")}</div>
+          <div class="run-meta">
+            <span>步数: ${r.steps || 0}</span>
+            <span>Tokens: ${r.usage?.totalTokens || 0}</span>
+            <span>耗时: ${r.durationMs ? (r.durationMs / 1000).toFixed(2) + "s" : "-"}</span>
+            <span>文件变动: +${r.createdCount || 0} / ~${r.modifiedCount || 0}</span>
+            ${r.cwd ? `<span>目录: ${escapeHtml(r.cwd)}</span>` : ""}
+          </div>
+          ${isOpen ? renderRunDetailHtml(detail) : ""}
+        `;
+        card.onclick = (e) => {
+          if (e.target.closest(".run-detail")) return;
+          toggleRunDetail(r.id);
+        };
+        box.appendChild(card);
+      }
+    }
+
+    function renderRunDetailHtml(detail) {
+      if (!detail) return '<div class="run-detail"><span class="hint">正在加载完整轨迹...</span></div>';
+      const files = [
+        ...(detail.createdFiles || []).map((f) => `[新建] ${f}`),
+        ...(detail.modifiedFiles || []).map((f) => `[修改] ${f}`)
+      ];
+      const traceHtml = (detail.trace || []).map((t) => `
+        <div style="margin-bottom:6px;padding:6px 8px;background:var(--panel-2);border-radius:7px;">
+          <div style="font-size:12px;font-weight:600;">第 ${t.step} 步 · ${escapeHtml(t.model)}</div>
+          ${(t.tools || []).map((tl) => `
+            <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">
+              • <strong>${escapeHtml(tl.tool)}</strong> (${tl.ok ? "成功" : "报错"}): <code>${escapeHtml(JSON.stringify(tl.args))}</code>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+      return `
+        <div class="run-detail">
+          <div class="hint"><strong>完整任务：</strong>${escapeHtml(detail.task)}</div>
+          ${files.length ? `<div class="hint" style="margin-top:4px;"><strong>涉及文件：</strong>${escapeHtml(files.join("，"))}</div>` : ""}
+          ${traceHtml ? `<div style="margin-top:8px;"><div class="hint" style="margin-bottom:4px;"><strong>工具调用轨迹：</strong></div>${traceHtml}</div>` : ""}
+          ${detail.summary ? `<div style="margin-top:8px;"><div class="hint"><strong>最终摘要：</strong></div><pre class="codebox">${escapeHtml(detail.summary)}</pre></div>` : ""}
+          ${detail.error ? `<div style="margin-top:8px;"><div class="hint" style="color:var(--danger);"><strong>错误信息：</strong></div><pre class="codebox">${escapeHtml(detail.error)}</pre></div>` : ""}
+        </div>
+      `;
+    }
+
+    async function toggleRunDetail(id) {
+      if (expandedRunIds.has(id)) {
+        expandedRunIds.delete(id);
+        renderRuns();
+        return;
+      }
+      expandedRunIds.add(id);
+      renderRuns();
+      try {
+        const res = await api("/api/run?id=" + encodeURIComponent(id));
+        runDetailsCache[id] = res.run;
+        renderRuns();
+      } catch (e) {
+        toast("加载详情失败：" + e.message, true);
+      }
+    }
+
+    async function clearRuns() {
+      if (!confirm("确定清空所有历史执行记录吗？")) return;
+      try {
+        const res = await api("/api/runs/clear", { method: "POST", body: "{}" });
+        runDetailsCache = {};
+        expandedRunIds.clear();
+        state = res.state;
+        renderAll();
+        toast("历史记录已清空");
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    // Playground
+    function renderPlaygroundSelectors() {
+      const profSel = document.getElementById("pg-profile");
+      const curProf = profSel.value;
+      profSel.innerHTML = "";
+      for (const [k, p] of Object.entries(state.config.routing?.profiles || {})) {
+        const opt = document.createElement("option");
+        opt.value = k;
+        opt.textContent = `${p.label || k} (${p.primary || "未绑定"})`;
+        profSel.appendChild(opt);
+      }
+      if (curProf) profSel.value = curProf;
+
+      const modSel = document.getElementById("pg-model");
+      const curMod = modSel.value;
+      modSel.innerHTML = buildModelSelectOptions(curMod, pgModelFilterQuery);
+    }
+
+    function applyPgModelFilter(query) {
+      pgModelFilterQuery = query || "";
+      const modSel = document.getElementById("pg-model");
+      const curMod = modSel.value;
+      modSel.innerHTML = buildModelSelectOptions(curMod, pgModelFilterQuery);
+    }
+
+    function togglePgMode() {
+      const mode = document.getElementById("pg-target-mode").value;
+      document.getElementById("pg-profile-wrap").classList.toggle("hidden", mode !== "profile");
+      document.getElementById("pg-direct-wrap").classList.toggle("hidden", mode !== "direct");
+    }
+
+    async function runPlayground() {
+      const prompt = document.getElementById("pg-prompt").value.trim();
+      if (!prompt) {
+        toast("请输入测试 Prompt", true);
+        return;
+      }
+      const mode = document.getElementById("pg-target-mode").value;
+      const body = {
+        prompt,
+        system: document.getElementById("pg-system").value.trim() || undefined
+      };
+      if (mode === "profile") {
+        body.profile = document.getElementById("pg-profile").value;
+      } else {
+        const spec = document.getElementById("pg-model").value;
+        if (!spec) {
+          toast("请选择具体模型", true);
+          return;
+        }
+        const idx = spec.indexOf(":");
+        body.provider = spec.slice(0, idx);
+        body.model = spec.slice(idx + 1);
+      }
+
+      const btn = document.getElementById("pg-run-btn");
+      btn.disabled = true;
+      btn.textContent = "执行中...";
+      try {
+        const res = await api("/api/playground", { method: "POST", body: JSON.stringify(body) });
+        state = res.state;
+        renderAll();
+        const r = res.result;
+        document.getElementById("pg-result-card").classList.remove("hidden");
+        document.getElementById("pg-output").textContent = r.text || "(空输出)";
+        const rw = document.getElementById("pg-reasoning-wrap");
+        if (r.reasoningContent) {
+          rw.classList.remove("hidden");
+          document.getElementById("pg-reasoning").textContent = r.reasoningContent;
+        } else {
+          rw.classList.add("hidden");
+        }
+        document.getElementById("pg-meta-badges").innerHTML = `
+          <span class="badge ok">${escapeHtml(r.providerName || r.providerId)} : ${escapeHtml(r.model)}</span>
+          <span class="badge neutral">${r.latencyMs}ms</span>
+          <span class="badge neutral">${r.usage?.totalTokens || 0} tokens</span>
+          ${r.fallbackUsed ? '<span class="badge warn">触发 Fallback</span>' : ""}
+        `;
+        document.getElementById("pg-attempts").textContent = "路由尝试记录：" + (r.attempts || []).map((a) => `${a.providerId}:${a.model} -> ${a.status}${a.reason ? " (" + a.reason + ")" : ""}`).join(" | ");
+      } catch (e) {
+        toast("试跑失败：" + e.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "▶ 发送试跑";
+      }
+    }
+
+    try { applyTheme(localStorage.getItem("eo_console_theme") || "dark"); } catch {}
+    refreshAll().catch((e) => toast("加载控制台失败：" + e.message, true));
+  </script>
+</body>
+</html>

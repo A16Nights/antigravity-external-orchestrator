@@ -1,0 +1,13 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "external-orchestrator",
+  "displayName": "苍蓝协奏台",
+  "version": "1.0.0",
+  "logo": "assets/logo.svg",
+  "description": "多渠道外部模型执行插件：由 Antigravity 主脑负责规划与验收，自动调度 DeepSeek / OFM / OpenAI / Anthropic 等外部 API 执行代码编辑、命令运行与文本生成，支持角色路由、Fallback 容灾链、断路器及可视化控制台。",
+  "suggestedPrompts": [
+    "列出当前已配置的外部执行手模型渠道与路由状态",
+    "把指定目录下的文件检查与修改任务派发给 DeepSeek 执行手处理",
+    "查看最近的外部执行手运行记录并打开苍蓝协奏台"
+  ]
+}
