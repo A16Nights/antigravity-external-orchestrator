@@ -93,13 +93,35 @@
       gap: 5px;
       white-space: nowrap;
     }
-    .btn:hover:not(:disabled) { background: var(--panel-hover); border-color: var(--accent); }
+    .btn:hover:not(:disabled) { background: var(--panel-hover); border-color: var(--accent); transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: var(--ink); }
     .btn.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
     .btn.danger { color: var(--danger); border-color: transparent; background: rgba(255, 107, 122, 0.1); }
     .btn.danger:hover:not(:disabled) { background: rgba(255, 107, 122, 0.2); border-color: var(--danger); }
     .btn.sm { padding: 4px 9px; font-size: 12px; }
+    .icon-btn {
+      width: 30px;
+      height: 28px;
+      padding: 0;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+    }
+    .icon-btn:hover:not(:disabled) { background: var(--panel-hover); border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .icon-btn:active:not(:disabled) { transform: scale(0.94); }
+    @keyframes spin360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .icon-btn.spinning { animation: spin360 0.65s linear infinite; }
+    select:hover, input[type="text"]:hover, input[type="password"]:hover, input[type="number"]:hover, textarea:hover { border-color: var(--accent); }
 
     .tabs {
       display: flex;
@@ -476,7 +498,8 @@
     <div class="header-actions">
       <button class="btn sm" onclick="openConfigFile()" title="在资源管理器中定位 config.json">打开配置文件</button>
       <button class="btn sm" onclick="copyWebUrl()" title="复制浏览器独立访问链接">复制全屏地址</button>
-      <button id="theme-btn" class="btn sm" onclick="toggleTheme()">🌙 暗色</button>
+      <button id="refresh-btn" class="icon-btn" onclick="refreshAllData()" title="刷新面板数据">↻</button>
+      <button id="theme-btn" class="icon-btn" onclick="toggleTheme()" title="切换明暗主题">☀️</button>
     </div>
   </header>
 
@@ -805,8 +828,23 @@
       const mode = t === "light" ? "light" : "dark";
       if (mode === "light") document.documentElement.setAttribute("data-theme", "light");
       else document.documentElement.removeAttribute("data-theme");
-      document.getElementById("theme-btn").textContent = mode === "light" ? "☀ 亮色" : "🌙 暗色";
+      const btn = document.getElementById("theme-btn");
+      if (btn) {
+        btn.textContent = mode === "light" ? "🌙" : "☀️";
+        btn.title = mode === "light" ? "切换到深色主题" : "切换到浅色主题";
+      }
       try { localStorage.setItem("eo_console_theme", mode); } catch {}
+    }
+
+    async function refreshAllData() {
+      const btn = document.getElementById("refresh-btn");
+      if (btn) btn.classList.add("spinning");
+      try {
+        if (typeof loadAll === "function") await loadAll();
+        if (typeof toast === "function") toast("已刷新最新状态");
+      } finally {
+        if (btn) setTimeout(() => btn.classList.remove("spinning"), 260);
+      }
     }
 
     function toggleTheme() {
