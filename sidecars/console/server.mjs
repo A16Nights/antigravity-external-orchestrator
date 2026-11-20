@@ -1,3 +1,4 @@
+import { checkGithubUpdate } from "../../lib/update-checker.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
@@ -75,6 +76,14 @@ function buildStatePayload() {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://127.0.0.1:${actualPort}`);
   const pathname = url.pathname;
+
+  if (req.method === "GET" && pathname === "/api/check-update") {
+    const force = new URL(req.url, "http://127.0.0.1").searchParams.get("force") === "1";
+    const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+    const info = await checkGithubUpdate({ pluginRoot, repo: "A16Nights/antigravity-external-orchestrator", force });
+    sendJson(res, 200, info);
+    return;
+  }
 
   if (pathname === "/healthz") {
     sendJson(res, 200, { ok: true, service: "external-orchestrator-console" });
