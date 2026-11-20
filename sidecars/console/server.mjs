@@ -65,7 +65,8 @@ function buildStatePayload() {
     config: store.getPublicConfig(),
     presets: PROVIDER_PRESETS,
     breakerStates: store.getBreakerStates(),
-    runs: store.listRuns(40),
+    runs: store.listRuns(100, { archived: false }),
+    archivedRuns: store.listRuns(100, { archived: true }),
     configPath: store.configPath,
     webUrl: getWebUrl()
   };
@@ -183,6 +184,24 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "POST" && pathname === "/api/runs/clear") {
         store.clearRuns();
         sendJson(res, 200, { ok: true, state: buildStatePayload() });
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/runs/archive") {
+        const body = await readBody(req);
+        const result = body.all ? store.archiveAllRuns() : store.archiveRuns(body.ids || (body.id ? [body.id] : []));
+        sendJson(res, 200, { ok: true, ...result, state: buildStatePayload() });
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/runs/unarchive") {
+        const body = await readBody(req);
+        const result = store.unarchiveRuns(body.ids || (body.id ? [body.id] : []));
+        sendJson(res, 200, { ok: true, ...result, state: buildStatePayload() });
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/runs/delete") {
+        const body = await readBody(req);
+        const result = body.allArchived ? store.clearArchivedRuns() : store.deleteRuns(body.ids || (body.id ? [body.id] : []));
+        sendJson(res, 200, { ok: true, ...result, state: buildStatePayload() });
         return;
       }
       if (req.method === "POST" && pathname === "/api/playground") {

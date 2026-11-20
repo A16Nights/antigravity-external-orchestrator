@@ -404,6 +404,67 @@
       max-width: 360px;
     }
     .toast.show { opacity: 1; transform: translateY(0); }
+    .md-summary {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text);
+      max-height: 420px;
+      overflow: auto;
+      margin: 6px 0 0 0;
+      word-break: break-word;
+    }
+    .md-summary h1, .md-summary h2, .md-summary h3, .md-summary h4 {
+      margin: 10px 0 6px 0;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .md-summary h1 { font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .md-summary h2 { font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+    .md-summary h3 { font-size: 14px; }
+    .md-summary h4 { font-size: 13px; }
+    .md-summary p { margin: 6px 0; }
+    .md-summary ul, .md-summary ol { margin: 6px 0; padding-left: 20px; }
+    .md-summary li { margin: 3px 0; }
+    .md-summary code {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Cascadia Code", monospace;
+      font-size: 12px;
+    }
+    .md-summary pre {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .md-summary pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      font-size: 12px;
+    }
+    .md-summary blockquote {
+      margin: 6px 0;
+      padding: 4px 10px;
+      border-left: 3px solid var(--accent, #7aa2f7);
+      color: var(--muted);
+      background: rgba(122, 162, 247, 0.06);
+      border-radius: 0 6px 6px 0;
+    }
+    .md-summary hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -420,15 +481,16 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="providers" onclick="switchTab('providers')">模型渠道</button>
+    <button class="tab active" data-tab="runs" onclick="switchTab('runs')">执行监控</button>
+    <button class="tab" data-tab="providers" onclick="switchTab('providers')">模型渠道</button>
     <button class="tab" data-tab="routing" onclick="switchTab('routing')">路由与容灾</button>
-    <button class="tab" data-tab="runs" onclick="switchTab('runs')">执行监控</button>
     <button class="tab" data-tab="playground" onclick="switchTab('playground')">在线试跑</button>
+    <button class="tab" data-tab="archive" onclick="switchTab('archive')">归档箱 <span id="archived-count-badge" class="badge neutral" style="margin-left:4px;font-size:10px;padding:1px 6px;">0</span></button>
   </nav>
 
   <main>
     <!-- Tab 1: Providers -->
-    <section id="tab-providers">
+    <section id="tab-providers" class="hidden">
       <p class="subtitle">填入各提供商的 API 密钥或接入本地转发端口，主脑（Antigravity）即可按角色自动调度这些外部模型干活。</p>
       <div class="presets-bar">
         <span class="presets-label">快速添加渠道：</span>
@@ -522,16 +584,54 @@
     </section>
 
     <!-- Tab 3: Runs Monitoring -->
-    <section id="tab-runs" class="hidden">
+    <section id="tab-runs">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <p class="subtitle" style="margin:0;">记录每次主脑派发给外部执行手的多步操作、Token 消耗、修改的文件及容灾切换情况。点击卡片展开完整轨迹。</p>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn sm" onclick="refreshAll()">刷新记录</button>
-          <button class="btn danger sm" onclick="clearRuns()">清空历史</button>
+          <button id="btn-batch-select" class="btn sm" onclick="toggleBatchSelect()">批量选择</button>
+          <button class="btn primary sm" onclick="confirmArchiveAll()">全部归档</button>
+        </div>
+      </div>
+      <div id="runs-batch-bar" class="card hidden" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input id="chk-select-all-runs" type="checkbox" style="width:auto;" onchange="toggleSelectAllRuns(this.checked)" />
+            <span>全选当前列表</span>
+          </label>
+          <span id="batch-selected-count" style="color:var(--muted);">已选 0 条</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn primary sm" onclick="archiveSelectedRuns()">归档选中</button>
+          <button class="btn sm" onclick="toggleBatchSelect(false)">取消批量</button>
         </div>
       </div>
       <div id="runs-list"></div>
     </section>
+
+    <!-- Tab 5: Archive Box -->
+    <section id="tab-archive" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <p class="subtitle" style="margin:0;">已归档的执行记录会保存在这里，可随时展开查看、恢复回执行监控，或永久删除。</p>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sm" onclick="refreshAll()">刷新归档</button>
+          <button class="btn danger sm" onclick="confirmClearArchived()">清空归档</button>
+        </div>
+      </div>
+      <div id="archived-runs-list"></div>
+    </section>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal-backdrop hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;">
+      <div class="card" style="width:100%;max-width:400px;margin:0;padding:18px;">
+        <h3 id="confirm-modal-title" style="margin:0 0 8px 0;">确认操作</h3>
+        <p id="confirm-modal-msg" style="margin:0 0 16px 0;font-size:13px;color:var(--muted);line-height:1.6;"></p>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn sm" onclick="closeConfirmModal()">取消</button>
+          <button id="confirm-modal-ok" class="btn primary sm" onclick="runConfirmModalAction()">确认</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Tab 4: Playground -->
     <section id="tab-playground" class="hidden">
@@ -716,10 +816,10 @@
 
     function switchTab(name) {
       document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
-      ["providers", "routing", "runs", "playground"].forEach((t) => {
+      ["runs", "providers", "routing", "playground", "archive"].forEach((t) => {
         document.getElementById("tab-" + t).classList.toggle("hidden", t !== name);
       });
-      if (name === "runs") refreshAll();
+      if (name === "runs" || name === "archive") refreshAll();
     }
 
     function copyWebUrl() {
@@ -773,6 +873,7 @@
       renderProviders();
       renderRouting();
       renderRuns();
+      renderArchivedRuns();
       renderPlaygroundSelectors();
     }
 
@@ -1374,8 +1475,81 @@
       }
     }
 
-    // Runs Monitoring
+    // Runs Monitoring & Archive
+    let batchSelectMode = false;
+    let selectedRunIds = new Set();
+    let confirmModalCallback = null;
+
+    function openConfirmModal({ title, message, confirmText = "确认", danger = false, onConfirm }) {
+      document.getElementById("confirm-modal-title").textContent = title || "确认操作";
+      document.getElementById("confirm-modal-msg").textContent = message || "";
+      const okBtn = document.getElementById("confirm-modal-ok");
+      okBtn.textContent = confirmText;
+      okBtn.className = "btn sm " + (danger ? "danger" : "primary");
+      confirmModalCallback = onConfirm || null;
+      const modal = document.getElementById("confirm-modal");
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+    }
+
+    function closeConfirmModal() {
+      confirmModalCallback = null;
+      const modal = document.getElementById("confirm-modal");
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+
+    async function runConfirmModalAction() {
+      const cb = confirmModalCallback;
+      closeConfirmModal();
+      if (typeof cb === "function") await cb();
+    }
+
+    function toggleBatchSelect(force) {
+      batchSelectMode = force !== undefined ? Boolean(force) : !batchSelectMode;
+      if (!batchSelectMode) selectedRunIds.clear();
+      const btn = document.getElementById("btn-batch-select");
+      if (btn) btn.className = "btn sm" + (batchSelectMode ? " primary" : "");
+      renderRuns();
+    }
+
+    function toggleSelectRun(id, checked) {
+      if (checked) selectedRunIds.add(id);
+      else selectedRunIds.delete(id);
+      updateBatchBar();
+    }
+
+    function toggleSelectAllRuns(checked) {
+      const runs = state.runs || [];
+      selectedRunIds.clear();
+      if (checked) {
+        for (const r of runs) selectedRunIds.add(r.id);
+      }
+      renderRuns();
+    }
+
+    function updateBatchBar() {
+      const bar = document.getElementById("runs-batch-bar");
+      if (!bar) return;
+      if (!batchSelectMode) {
+        bar.classList.add("hidden");
+        bar.style.display = "none";
+        return;
+      }
+      bar.classList.remove("hidden");
+      bar.style.display = "flex";
+      const runs = state.runs || [];
+      const validIds = new Set(runs.map((r) => r.id));
+      for (const id of Array.from(selectedRunIds)) {
+        if (!validIds.has(id)) selectedRunIds.delete(id);
+      }
+      document.getElementById("batch-selected-count").textContent = `已选 ${selectedRunIds.size} 条`;
+      const chkAll = document.getElementById("chk-select-all-runs");
+      if (chkAll) chkAll.checked = runs.length > 0 && selectedRunIds.size === runs.length;
+    }
+
     function renderRuns() {
+      updateBatchBar();
       const box = document.getElementById("runs-list");
       box.innerHTML = "";
       const runs = state.runs || [];
@@ -1389,15 +1563,20 @@
         const statusClass = r.status === "completed" ? "ok" : r.status === "failed" ? "danger" : r.status === "running" ? "" : "warn";
         const isOpen = expandedRunIds.has(r.id);
         const detail = runDetailsCache[r.id];
+        const isChecked = selectedRunIds.has(r.id);
         card.innerHTML = `
           <div class="run-head">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              ${batchSelectMode ? `<input type="checkbox" class="run-batch-chk" style="width:auto;cursor:pointer;" ${isChecked ? "checked" : ""} onclick="event.stopPropagation(); toggleSelectRun('${escapeHtml(r.id)}', this.checked)" />` : ""}
               <span class="badge ${statusClass}">${escapeHtml(r.status)}</span>
               <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
               ${r.fallbackUsed ? '<span class="badge warn">已触发 Fallback</span>' : ""}
               <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
             </div>
-            <span style="font-size:11.5px;color:var(--muted);">${formatTime(r.startedAt)}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11.5px;color:var(--muted);">${formatTime(r.startedAt)}</span>
+              ${!batchSelectMode ? `<button class="btn sm run-action-btn" style="padding:2px 8px;font-size:11px;" onclick="event.stopPropagation(); archiveSingleRun('${escapeHtml(r.id)}')">归档</button>` : ""}
+            </div>
           </div>
           <div class="run-title">${escapeHtml(r.taskPreview || "(无标题)")}</div>
           <div class="run-meta">
@@ -1410,11 +1589,140 @@
           ${isOpen ? renderRunDetailHtml(detail) : ""}
         `;
         card.onclick = (e) => {
-          if (e.target.closest(".run-detail")) return;
+          if (e.target.closest(".run-detail") || e.target.closest(".run-action-btn") || e.target.closest(".run-batch-chk")) return;
+          if (batchSelectMode) {
+            toggleSelectRun(r.id, !selectedRunIds.has(r.id));
+            renderRuns();
+            return;
+          }
           toggleRunDetail(r.id);
         };
         box.appendChild(card);
       }
+    }
+
+    function renderArchivedRuns() {
+      const archived = state.archivedRuns || [];
+      const badge = document.getElementById("archived-count-badge");
+      if (badge) badge.textContent = String(archived.length);
+      const box = document.getElementById("archived-runs-list");
+      if (!box) return;
+      box.innerHTML = "";
+      if (!archived.length) {
+        box.innerHTML = '<div class="card">归档箱空空如也~ 在「执行监控」里归档的记录会出现在这里。</div>';
+        return;
+      }
+      for (const r of archived) {
+        const card = document.createElement("div");
+        card.className = "run-card";
+        const statusClass = r.status === "completed" ? "ok" : r.status === "failed" ? "danger" : r.status === "running" ? "" : "warn";
+        const isOpen = expandedRunIds.has(r.id);
+        const detail = runDetailsCache[r.id];
+        card.innerHTML = `
+          <div class="run-head">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge ${statusClass}">${escapeHtml(r.status)}</span>
+              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
+              <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11.5px;color:var(--muted);">归档于 ${formatTime(r.archivedAt || r.startedAt)}</span>
+              <button class="btn sm run-action-btn" style="padding:2px 8px;font-size:11px;" onclick="event.stopPropagation(); unarchiveSingleRun('${escapeHtml(r.id)}')">恢复</button>
+              <button class="btn danger sm run-action-btn" style="padding:2px 8px;font-size:11px;" onclick="event.stopPropagation(); confirmDeleteArchived('${escapeHtml(r.id)}')">删除</button>
+            </div>
+          </div>
+          <div class="run-title">${escapeHtml(r.taskPreview || "(无标题)")}</div>
+          <div class="run-meta">
+            <span>步数: ${r.steps || 0}</span>
+            <span>Tokens: ${r.usage?.totalTokens || 0}</span>
+            <span>耗时: ${r.durationMs ? (r.durationMs / 1000).toFixed(2) + "s" : "-"}</span>
+            <span>文件变动: +${r.createdCount || 0} / ~${r.modifiedCount || 0}</span>
+            ${r.cwd ? `<span>目录: ${escapeHtml(r.cwd)}</span>` : ""}
+          </div>
+          ${isOpen ? renderRunDetailHtml(detail) : ""}
+        `;
+        card.onclick = (e) => {
+          if (e.target.closest(".run-detail") || e.target.closest(".run-action-btn")) return;
+          toggleRunDetail(r.id);
+        };
+        box.appendChild(card);
+      }
+    }
+
+    function renderMarkdown(md) {
+      const raw = String(md || "");
+      const codeBlocks = [];
+      let text = raw.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, (_, lang, code) => {
+        const idx = codeBlocks.length;
+        codeBlocks.push(`<pre><code>${escapeHtml(code.replace(/\r?\n$/, ""))}</code></pre>`);
+        return `@@CODEBLOCK_${idx}@@`;
+      });
+
+      const formatInline = (s) => {
+        let out = escapeHtml(s);
+        out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+        out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        return out;
+      };
+
+      const lines = text.split(/\r?\n/);
+      const html = [];
+      let inUl = false;
+      let inOl = false;
+      const closeLists = () => {
+        if (inUl) { html.push("</ul>"); inUl = false; }
+        if (inOl) { html.push("</ol>"); inOl = false; }
+      };
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          closeLists();
+          continue;
+        }
+        const cbMatch = trimmed.match(/^@@CODEBLOCK_(\d+)@@$/);
+        if (cbMatch) {
+          closeLists();
+          html.push(codeBlocks[Number(cbMatch[1])]);
+          continue;
+        }
+        if (/^---+$/.test(trimmed)) {
+          closeLists();
+          html.push("<hr />");
+          continue;
+        }
+        const hMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (hMatch) {
+          closeLists();
+          const lvl = hMatch[1].length;
+          html.push(`<h${lvl}>${formatInline(hMatch[2])}</h${lvl}>`);
+          continue;
+        }
+        if (trimmed.startsWith("> ")) {
+          closeLists();
+          html.push(`<blockquote>${formatInline(trimmed.slice(2))}</blockquote>`);
+          continue;
+        }
+        const ulMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+        if (ulMatch) {
+          if (inOl) { html.push("</ol>"); inOl = false; }
+          if (!inUl) { html.push("<ul>"); inUl = true; }
+          html.push(`<li>${formatInline(ulMatch[1])}</li>`);
+          continue;
+        }
+        const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+        if (olMatch) {
+          if (inUl) { html.push("</ul>"); inUl = false; }
+          if (!inOl) { html.push("<ol>"); inOl = true; }
+          html.push(`<li>${formatInline(olMatch[1])}</li>`);
+          continue;
+        }
+        closeLists();
+        html.push(`<p>${formatInline(trimmed)}</p>`);
+      }
+      closeLists();
+      return html.join("\n").replace(/@@CODEBLOCK_(\d+)@@/g, (_, idx) => codeBlocks[Number(idx)] || "");
     }
 
     function renderRunDetailHtml(detail) {
@@ -1438,7 +1746,7 @@
           <div class="hint"><strong>完整任务：</strong>${escapeHtml(detail.task)}</div>
           ${files.length ? `<div class="hint" style="margin-top:4px;"><strong>涉及文件：</strong>${escapeHtml(files.join("，"))}</div>` : ""}
           ${traceHtml ? `<div style="margin-top:8px;"><div class="hint" style="margin-bottom:4px;"><strong>工具调用轨迹：</strong></div>${traceHtml}</div>` : ""}
-          ${detail.summary ? `<div style="margin-top:8px;"><div class="hint"><strong>最终摘要：</strong></div><pre class="codebox">${escapeHtml(detail.summary)}</pre></div>` : ""}
+          ${detail.summary ? `<div style="margin-top:8px;"><div class="hint"><strong>最终摘要：</strong></div><div class="md-summary">${renderMarkdown(detail.summary)}</div></div>` : ""}
           ${detail.error ? `<div style="margin-top:8px;"><div class="hint" style="color:var(--danger);"><strong>错误信息：</strong></div><pre class="codebox">${escapeHtml(detail.error)}</pre></div>` : ""}
         </div>
       `;
@@ -1448,31 +1756,135 @@
       if (expandedRunIds.has(id)) {
         expandedRunIds.delete(id);
         renderRuns();
+        renderArchivedRuns();
         return;
       }
       expandedRunIds.add(id);
       renderRuns();
+      renderArchivedRuns();
       try {
         const res = await api("/api/run?id=" + encodeURIComponent(id));
         runDetailsCache[id] = res.run;
         renderRuns();
+        renderArchivedRuns();
       } catch (e) {
         toast("加载详情失败：" + e.message, true);
       }
     }
 
-    async function clearRuns() {
-      if (!confirm("确定清空所有历史执行记录吗？")) return;
+    async function archiveSingleRun(id) {
       try {
-        const res = await api("/api/runs/clear", { method: "POST", body: "{}" });
-        runDetailsCache = {};
-        expandedRunIds.clear();
+        const res = await api("/api/runs/archive", { method: "POST", body: JSON.stringify({ ids: [id] }) });
         state = res.state;
         renderAll();
-        toast("历史记录已清空");
+        toast("已归档到归档箱");
       } catch (e) {
         toast(e.message, true);
       }
+    }
+
+    async function archiveSelectedRuns() {
+      const ids = Array.from(selectedRunIds);
+      if (!ids.length) {
+        toast("请先勾选要归档的执行记录", true);
+        return;
+      }
+      try {
+        const res = await api("/api/runs/archive", { method: "POST", body: JSON.stringify({ ids }) });
+        selectedRunIds.clear();
+        batchSelectMode = false;
+        const btn = document.getElementById("btn-batch-select");
+        if (btn) btn.className = "btn sm";
+        state = res.state;
+        renderAll();
+        toast(`已归档 ${res.count || ids.length} 条记录`);
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    function confirmArchiveAll() {
+      const count = (state.runs || []).length;
+      if (!count) {
+        toast("当前没有可归档的执行记录");
+        return;
+      }
+      openConfirmModal({
+        title: "确认全部归档",
+        message: `确定将当前执行监控中的全部 ${count} 条记录移入「归档箱」吗？归档后仍可在归档箱中随时查看或恢复。`,
+        confirmText: "确认全部归档",
+        danger: false,
+        onConfirm: async () => {
+          try {
+            const res = await api("/api/runs/archive", { method: "POST", body: JSON.stringify({ all: true }) });
+            selectedRunIds.clear();
+            batchSelectMode = false;
+            const btn = document.getElementById("btn-batch-select");
+            if (btn) btn.className = "btn sm";
+            state = res.state;
+            renderAll();
+            toast(`已归档全部 ${res.count || count} 条记录`);
+          } catch (e) {
+            toast(e.message, true);
+          }
+        }
+      });
+    }
+
+    async function unarchiveSingleRun(id) {
+      try {
+        const res = await api("/api/runs/unarchive", { method: "POST", body: JSON.stringify({ ids: [id] }) });
+        state = res.state;
+        renderAll();
+        toast("已恢复到执行监控");
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+
+    function confirmDeleteArchived(id) {
+      openConfirmModal({
+        title: "确认永久删除",
+        message: "确定永久删除这条归档记录吗？删除后无法恢复。",
+        confirmText: "确认删除",
+        danger: true,
+        onConfirm: async () => {
+          try {
+            const res = await api("/api/runs/delete", { method: "POST", body: JSON.stringify({ ids: [id] }) });
+            delete runDetailsCache[id];
+            expandedRunIds.delete(id);
+            state = res.state;
+            renderAll();
+            toast("已永久删除该记录");
+          } catch (e) {
+            toast(e.message, true);
+          }
+        }
+      });
+    }
+
+    function confirmClearArchived() {
+      const count = (state.archivedRuns || []).length;
+      if (!count) {
+        toast("归档箱已经是空的了");
+        return;
+      }
+      openConfirmModal({
+        title: "确认清空归档箱",
+        message: `确定永久删除归档箱中的全部 ${count} 条记录吗？此操作不可撤销。`,
+        confirmText: "确认清空",
+        danger: true,
+        onConfirm: async () => {
+          try {
+            const res = await api("/api/runs/delete", { method: "POST", body: JSON.stringify({ allArchived: true }) });
+            state = res.state;
+            renderAll();
+            toast(`已清空 ${res.count || count} 条归档记录`);
+          } catch (e) {
+            toast(e.message, true);
+          }
+        }
+      });
     }
 
     // Playground
