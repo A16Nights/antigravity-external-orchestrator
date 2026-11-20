@@ -4,7 +4,7 @@ import { OrchestratorStore } from "../lib/store.mjs";
 function main() {
   try {
     const store = new OrchestratorStore();
-    const cfg = store.loadConfig();
+    const cfg = store.getPublicConfig();
     if (cfg.worker?.perTurnReinforce === false) {
       process.stdout.write(JSON.stringify({}));
       return;
