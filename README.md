@@ -39,10 +39,10 @@
 
 ```bash
 # Windows (PowerShell)
-git clone https://github.com/A16Nights/external-orchestrator.git "$env:USERPROFILE\.gemini\config\plugins\external-orchestrator"
+git clone https://github.com/A16Nights/antigravity-external-orchestrator.git "$env:USERPROFILE\.gemini\config\plugins\external-orchestrator"
 
 # macOS / Linux
-git clone https://github.com/A16Nights/external-orchestrator.git ~/.gemini/config/plugins/external-orchestrator
+git clone https://github.com/A16Nights/antigravity-external-orchestrator.git ~/.gemini/config/plugins/external-orchestrator
 ```
 
 然后**重启或重载 Antigravity**，插件的 MCP 工具、右侧「苍蓝协奏台」面板以及主动调度规则会自动挂载生效。
