@@ -598,6 +598,10 @@
             <input id="wk-allow-outside" type="checkbox" style="width:auto;" />
             允许执行手读写工作区（cwd）以外的路径（默认关闭，更安全）
           </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:6px;font-size:12px;">
+            <input id="wk-per-turn-reinforce" type="checkbox" style="width:auto;" />
+            开启每轮 PreInvocation 派单前置提醒（专治外接主模型忘记调用协奏台，默认开启）
+          </label>
         </div>
       </div>
 
@@ -1406,6 +1410,7 @@
       document.getElementById("wk-max-steps").value = wk.maxStepsLimit ?? 40;
       document.getElementById("wk-cmd-timeout").value = wk.commandTimeoutMs ?? 60000;
       document.getElementById("wk-allow-outside").checked = Boolean(wk.allowOutsideWorkspace);
+      document.getElementById("wk-per-turn-reinforce").checked = wk.perTurnReinforce !== false;
     }
 
     function renderFallbackItems(profileKey, fallbacks) {
@@ -1489,7 +1494,8 @@
           defaultMaxSteps: Number(document.getElementById("wk-default-steps").value) || 18,
           maxStepsLimit: Number(document.getElementById("wk-max-steps").value) || 40,
           commandTimeoutMs: Number(document.getElementById("wk-cmd-timeout").value) || 60000,
-          allowOutsideWorkspace: document.getElementById("wk-allow-outside").checked
+          allowOutsideWorkspace: document.getElementById("wk-allow-outside").checked,
+          perTurnReinforce: document.getElementById("wk-per-turn-reinforce").checked
         }
       };
       try {
