@@ -3,6 +3,17 @@ import readline from "node:readline";
 import { OrchestratorStore } from "./lib/store.mjs";
 import { testProvider } from "./lib/llm-client.mjs";
 import { executeWorkerTask, generateOnce } from "./lib/executor.mjs";
+import {
+  RUN_CARD_URI,
+  buildInlineRunCardHtml
+} from "./lib/progress-ui.mjs";
+import {
+  getSidebarToolDefinition,
+  getSidebarResourceDefinition,
+  getSidebarResourceUri,
+  handleSidebarToolCall,
+  buildSidebarResourceReadResult
+} from "./lib/sidebar-nav.mjs";
 
 const store = new OrchestratorStore();
 
@@ -32,6 +43,9 @@ const TOOLS = [
         maxSteps: { type: "number", description: "可选：最大工具循环步数（默认 18，上限受 config.worker.maxStepsLimit 限制）" },
         systemHint: { type: "string", description: "可选：主规划手给执行手的额外约束提示" }
       }
+    },
+    _meta: {
+      ui: { resourceUri: RUN_CARD_URI }
     }
   },
   {
@@ -49,6 +63,9 @@ const TOOLS = [
         temperature: { type: "number", description: "可选温度参数" },
         maxTokens: { type: "number", description: "可选最大输出 token 数" }
       }
+    },
+    _meta: {
+      ui: { resourceUri: RUN_CARD_URI }
     }
   },
   {
@@ -72,6 +89,21 @@ const TOOLS = [
         limit: { type: "number", description: "返回最近几条记录（默认 15）" },
         runId: { type: "string", description: "可选：传入特定 runId 获取完整详细记录" }
       }
+    }
+  },
+  {
+    name: "worker_progress_api",
+    description: "苍蓝协奏实时进度 UI 内部接口（仅对 MCP App 可见）。",
+    inputSchema: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list", "detail"] },
+        payload: { type: "object" }
+      }
+    },
+    _meta: {
+      ui: { visibility: ["app"] }
     }
   }
 ];
@@ -114,6 +146,18 @@ async function dispatchTool(name, args = {}) {
       return {
         runs: store.listRuns(args.limit || 15)
       };
+    case "worker_progress_api": {
+      const action = args.action || "list";
+      const payload = args.payload || {};
+      if (action === "list") {
+        return { runs: store.listProgressRuns(payload.limit || 20) };
+      }
+      if (action === "detail") {
+        const runId = String(payload.runId || "");
+        return { run: runId ? store.getProgressRunDetail(runId) : null };
+      }
+      throw new Error(`Unsupported worker_progress_api action: ${action}`);
+    }
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -137,23 +181,59 @@ async function handleLine(line) {
       case "initialize":
         sendResponse(id, {
           protocolVersion: params?.protocolVersion || "2024-11-05",
-          capabilities: { tools: {} },
-          serverInfo: { name: "external-orchestrator", version: "1.0.0" }
+          capabilities: { tools: {}, resources: {} },
+          serverInfo: { name: "external-orchestrator", version: "1.3.0" }
         });
         break;
       case "ping":
         sendResponse(id, {});
         break;
-      case "tools/list":
-        sendResponse(id, { tools: TOOLS });
+      case "tools/list": {
+        const sbTool = getSidebarToolDefinition("external-orchestrator");
+        sendResponse(id, { tools: sbTool ? [...TOOLS, sbTool] : TOOLS });
         break;
+      }
+      case "resources/list": {
+        const sbRes = getSidebarResourceDefinition("external-orchestrator");
+        sendResponse(id, {
+          resources: [
+            {
+              uri: RUN_CARD_URI,
+              name: "Azure Orchestrator Run Card",
+              mimeType: "text/html;profile=mcp-app",
+              _meta: { ui: { prefersBorder: false } }
+            },
+            ...(sbRes ? [sbRes] : [])
+          ]
+        });
+        break;
+      }
+      case "resources/read": {
+        const uri = params?.uri;
+        if (uri === RUN_CARD_URI) {
+          const snapshot = { runs: store.listProgressRuns(10) };
+          sendResponse(id, {
+            contents: [{ uri: RUN_CARD_URI, mimeType: "text/html;profile=mcp-app", text: buildInlineRunCardHtml(snapshot) }]
+          });
+        } else if (uri === getSidebarResourceUri("external-orchestrator")) {
+          sendResponse(id, buildSidebarResourceReadResult("external-orchestrator"));
+        } else {
+          sendError(id, -32602, `Unknown resource: ${uri}`);
+        }
+        break;
+      }
       case "tools/call": {
         const toolName = params?.name;
+        if (toolName === "open_external_orchestrator_ui") {
+          sendResponse(id, handleSidebarToolCall("external-orchestrator"));
+          break;
+        }
         const toolArgs = params?.arguments || {};
         try {
           const result = await dispatchTool(toolName, toolArgs);
           sendResponse(id, {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+            structuredContent: result,
             isError: false
           });
         } catch (err) {

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "external-orchestrator": {
+    "orchestrator": {
       "command": "node",
       "args": ["./mcp-server.mjs"]
     }

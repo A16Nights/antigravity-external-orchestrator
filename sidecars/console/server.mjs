@@ -1,4 +1,7 @@
 import { checkGithubUpdate } from "../../lib/update-checker.mjs";
+import { isLeftSidebarEnabled, setLeftSidebarEnabled, listOwnedPluginsNavState, registerSidecarRuntime, refreshAntigravityMcpServers, injectSidebarToggleWidget } from "../../lib/sidebar-nav.mjs";
+import { handleAzureThemeHttp } from "../../lib/azure-theme.mjs";
+import { injectAzureUiKit } from "../../lib/azure-ui-kit.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
@@ -54,6 +57,8 @@ function checkAuth(req, url) {
 }
 
 let actualPort = PORT;
+const activeSseClosers = [];
+const MAX_SSE_CLIENTS = 2;
 
 function getWebUrl() {
   return TOKEN
@@ -61,11 +66,16 @@ function getWebUrl() {
     : `http://127.0.0.1:${actualPort}/`;
 }
 
+function getActiveRunsPayload() {
+  return store.listProgressRuns(20).filter((r) => r && r.status === "running");
+}
+
 function buildStatePayload() {
   return {
     config: store.getPublicConfig(),
     presets: PROVIDER_PRESETS,
     breakerStates: store.getBreakerStates(),
+    activeRuns: getActiveRunsPayload(),
     runs: store.listRuns(100, { archived: false }),
     archivedRuns: store.listRuns(100, { archived: true }),
     configPath: store.configPath,
@@ -93,7 +103,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
     const html = fs.readFileSync(HTML_PATH, "utf8");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(html);
+    res.end(injectAzureUiKit(injectSidebarToggleWidget(html, "external-orchestrator"), "external-orchestrator"));
     return;
   }
 
@@ -103,6 +113,31 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
+      if (await handleAzureThemeHttp(req, res)) return;
+    if (req.method === "GET" && pathname === "/api/sidebar-nav") {
+        sendJson(res, 200, {
+          ok: true,
+          pluginId: "external-orchestrator",
+          showInLeftSidebar: isLeftSidebarEnabled("external-orchestrator"),
+          plugins: listOwnedPluginsNavState()
+        });
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/sidebar-nav") {
+        const body = await readBody(req);
+        const targetId = String(body.pluginId || "external-orchestrator").trim();
+        const nextVal = Boolean(body.showInLeftSidebar);
+        setLeftSidebarEnabled(targetId, nextVal);
+        const rf = await refreshAntigravityMcpServers();
+        sendJson(res, 200, {
+          ok: true,
+          pluginId: targetId,
+          showInLeftSidebar: nextVal,
+          refreshed: Boolean(rf?.ok),
+          plugins: listOwnedPluginsNavState()
+        });
+        return;
+      }
       if (req.method === "GET" && pathname === "/api/state") {
         sendJson(res, 200, buildStatePayload());
         return;
@@ -169,10 +204,70 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 200, { ok: true, state: buildStatePayload() });
         return;
       }
+      if (req.method === "POST" && pathname === "/api/reinforce") {
+        const body = await readBody(req);
+        store.updateRoutingAndSettings({ worker: { perTurnReinforce: Boolean(body.enabled) } });
+        sendJson(res, 200, { ok: true, state: buildStatePayload() });
+        return;
+      }
       if (req.method === "POST" && pathname === "/api/breaker/reset") {
         const body = await readBody(req);
         store.resetCircuit(body.providerId || undefined);
         sendJson(res, 200, { ok: true, state: buildStatePayload() });
+        return;
+      }
+      if (req.method === "GET" && pathname === "/api/active-runs") {
+        sendJson(res, 200, { activeRuns: getActiveRunsPayload(), serverTime: Date.now() });
+        return;
+      }
+      if (req.method === "GET" && pathname === "/api/active-runs/stream") {
+        while (activeSseClosers.length >= MAX_SSE_CLIENTS) {
+          const oldest = activeSseClosers.shift();
+          try { oldest?.(); } catch {}
+        }
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no"
+        });
+        let closed = false;
+        let lastJson = "";
+        let lastIds = new Set();
+        const pushSnapshot = (force = false) => {
+          if (closed) return;
+          try {
+            const list = getActiveRunsPayload();
+            const nextIds = new Set(list.map((r) => r.runId));
+            let finishedAny = false;
+            for (const oldId of lastIds) {
+              if (!nextIds.has(oldId)) { finishedAny = true; break; }
+            }
+            lastIds = nextIds;
+            const payload = JSON.stringify({ activeRuns: list, finishedAny, serverTime: Date.now() });
+            if (force || payload !== lastJson || finishedAny) {
+              lastJson = payload;
+              res.write(`event: active_runs\ndata: ${payload}\n\n`);
+            }
+          } catch {}
+        };
+        pushSnapshot(true);
+        const timer = setInterval(() => pushSnapshot(false), 1000);
+        const pingTimer = setInterval(() => {
+          if (!closed) { try { res.write(": keepalive\n\n"); } catch {} }
+        }, 15000);
+        const cleanup = () => {
+          if (closed) return;
+          closed = true;
+          clearInterval(timer);
+          clearInterval(pingTimer);
+          const idx = activeSseClosers.indexOf(cleanup);
+          if (idx >= 0) activeSseClosers.splice(idx, 1);
+          try { res.end(); } catch {}
+        };
+        activeSseClosers.push(cleanup);
+        req.on("close", cleanup);
+        res.on("close", cleanup);
         return;
       }
       if (req.method === "GET" && pathname === "/api/runs") {
@@ -182,7 +277,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === "GET" && pathname === "/api/run") {
         const id = url.searchParams.get("id") || "";
-        const run = store.getRun(id);
+        const run = store.getRun(id) || store.getProgressRunDetail(id);
         if (!run) {
           sendJson(res, 404, { error: "Run not found" });
           return;
@@ -254,6 +349,13 @@ server.listen(PORT, "127.0.0.1", () => {
   const addr = server.address();
   if (addr && typeof addr === "object") actualPort = addr.port;
   console.log(`[external-orchestrator console] listening on http://127.0.0.1:${actualPort}`);
+  try {
+    const __a = server.address();
+    const __p = (__a && typeof __a === "object" && __a.port) ? __a.port : Number(PORT) || 0;
+    const __t = (process.env.ANTIGRAVITY_SIDECAR_UI_TOKEN || process.env.ANTIGRAVITY_SIDECAR_AUTH_TOKEN || process.env.ANTIGRAVITY_SIDECAR_WEB_TOKEN || "").trim();
+    const __u = __t ? `http://127.0.0.1:${__p}/?token=${encodeURIComponent(__t)}` : `http://127.0.0.1:${__p}/`;
+    registerSidecarRuntime("external-orchestrator", { port: __p, url: __u });
+  } catch {}
 });
 
 function shutdown() {

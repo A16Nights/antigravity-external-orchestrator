@@ -487,6 +487,72 @@
       border-top: 1px solid var(--border);
       margin: 10px 0;
     }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.82); }
+    }
+    .live-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ok, #3ddc97);
+      flex-shrink: 0;
+    }
+    .live-dot.running {
+      background: var(--accent, #7c9cff);
+      box-shadow: 0 0 8px rgba(124, 156, 255, 0.75);
+      animation: livePulse 1.3s ease-in-out infinite;
+    }
+    .live-card {
+      border: 1px solid rgba(124, 156, 255, 0.5);
+      background: linear-gradient(180deg, rgba(124, 156, 255, 0.08), rgba(124, 156, 255, 0.02));
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .live-progress-track {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .live-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent, #7c9cff), #3ddc97);
+      transition: width 0.3s ease;
+    }
+    .live-steps {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .live-step-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--panel-2);
+      font-size: 11.5px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -512,6 +578,14 @@
   </nav>
 
   <main>
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;">
+      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;user-select:none;">
+        <input type="checkbox" id="eo-top-reinforce" onchange="toggleTopReinforce(this.checked)" style="width:auto;margin:0;accent-color:var(--accent);" />
+        <span>开启每轮 PreInvocation 派单提醒强化（仅对外接模型生效，Antigravity内部模型自动跳过）</span>
+      </label>
+      <span id="eo-top-reinforce-status" class="hint" style="margin:0;">当前：加载中...</span>
+    </div>
+
     <!-- Tab 1: Providers -->
     <section id="tab-providers" class="hidden">
       <p class="subtitle">填入各提供商的 API 密钥或接入本地转发端口，主脑（Antigravity）即可按角色自动调度这些外部模型干活。</p>
@@ -615,6 +689,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <p class="subtitle" style="margin:0;">记录每次主脑派发给外部执行手的多步操作、Token 消耗、修改的文件及容灾切换情况。点击卡片展开完整轨迹。</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button id="btn-only-running" class="btn sm" onclick="toggleOnlyRunning()">仅看运行中</button>
           <button class="btn sm" onclick="refreshAll()">刷新记录</button>
           <button id="btn-batch-select" class="btn sm" onclick="toggleBatchSelect()">批量选择</button>
           <button class="btn primary sm" onclick="confirmArchiveAll()">全部归档</button>
@@ -633,6 +708,7 @@
           <button class="btn sm" onclick="toggleBatchSelect(false)">取消批量</button>
         </div>
       </div>
+      <div id="active-runs-section" style="margin-bottom:12px;"></div>
       <div id="runs-list"></div>
     </section>
 
@@ -844,7 +920,7 @@
       const btn = document.getElementById("refresh-btn");
       if (btn) btn.classList.add("spinning");
       try {
-        if (typeof loadAll === "function") await loadAll();
+        if (typeof refreshAll === "function") await refreshAll();
         if (typeof toast === "function") toast("已刷新最新状态");
       } finally {
         if (btn) setTimeout(() => btn.classList.remove("spinning"), 260);
@@ -875,6 +951,24 @@
         toast("配置文件位置：" + res.path);
       } catch (e) {
         toast("打开失败：" + e.message, true);
+      }
+    }
+
+    async function toggleTopReinforce(enabled) {
+      const topStatus = document.getElementById("eo-top-reinforce-status");
+      try {
+        const res = await api("/api/reinforce", {
+          method: "POST",
+          body: JSON.stringify({ enabled: Boolean(enabled) })
+        });
+        if (res && res.state) state = res.state;
+        const wkChk = document.getElementById("wk-per-turn-reinforce");
+        if (wkChk) wkChk.checked = Boolean(enabled);
+        if (topStatus) topStatus.textContent = enabled ? "当前：已开启（外接模型）" : "当前：已关闭";
+        toast(enabled ? "已开启每轮派单提醒强化（仅外接模型生效）" : "已关闭每轮派单提醒强化");
+      } catch (e) {
+        toast("保存失败：" + e.message, true);
+        if (typeof refreshAll === "function") await refreshAll();
       }
     }
 
@@ -1034,8 +1128,80 @@
       }
     }
 
+    function azureConfirm({ title = "确认操作", message = "", note = "", okText = "确认", cancelText = "取消", danger = true } = {}) {
+      return new Promise((resolve) => {
+        if (!document.getElementById("az-confirm-style")) {
+          const st = document.createElement("style");
+          st.id = "az-confirm-style";
+          st.textContent = `
+            .az-confirm-mask{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.56);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;}
+            .az-confirm-box{width:100%;max-width:390px;background:var(--card,var(--panel,#181e2e));color:var(--text,#e6edf7);border:1px solid var(--border,rgba(148,163,184,0.24));border-radius:12px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,0.42);}
+            .az-confirm-box h3{margin:0 0 10px;font-size:15px;font-weight:600;color:var(--text,#e6edf7);}
+            .az-confirm-msg{margin:0 0 6px;font-size:13px;line-height:1.6;color:var(--text,#e6edf7);}
+            .az-confirm-note{margin:0 0 4px;font-size:12px;line-height:1.5;color:var(--muted,#94a3b8);}
+            .az-confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+            .az-confirm-btn{padding:6px 13px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid var(--border,rgba(148,163,184,0.28));background:var(--panel-2,rgba(148,163,184,0.1));color:var(--text,#e6edf7);transition:all .15s ease;}
+            .az-confirm-btn:hover{border-color:var(--accent,#3b82f6);transform:translateY(-1px);}
+            .az-confirm-btn.danger{background:rgba(247,118,142,0.16);border-color:var(--danger,#f7768e);color:var(--danger,#f7768e);}
+            .az-confirm-btn.danger:hover{background:var(--danger,#f7768e);color:#fff;}
+            .az-confirm-btn.primary{background:var(--accent,#3b82f6);border-color:var(--accent,#3b82f6);color:#fff;}
+          `;
+          document.head.appendChild(st);
+        }
+        const mask = document.createElement("div");
+        mask.className = "az-confirm-mask";
+        const box = document.createElement("div");
+        box.className = "az-confirm-box";
+        box.setAttribute("role", "dialog");
+        box.setAttribute("aria-modal", "true");
+        const h3 = document.createElement("h3");
+        h3.textContent = title;
+        const pMsg = document.createElement("p");
+        pMsg.className = "az-confirm-msg";
+        pMsg.textContent = message;
+        box.appendChild(h3);
+        box.appendChild(pMsg);
+        if (note) {
+          const pNote = document.createElement("p");
+          pNote.className = "az-confirm-note";
+          pNote.textContent = note;
+          box.appendChild(pNote);
+        }
+        const actions = document.createElement("div");
+        actions.className = "az-confirm-actions";
+        const btnCancel = document.createElement("button");
+        btnCancel.className = "az-confirm-btn";
+        btnCancel.textContent = cancelText;
+        const btnOk = document.createElement("button");
+        btnOk.className = "az-confirm-btn " + (danger ? "danger" : "primary");
+        btnOk.textContent = okText;
+        actions.appendChild(btnCancel);
+        actions.appendChild(btnOk);
+        box.appendChild(actions);
+        mask.appendChild(box);
+        const close = (val) => {
+          window.removeEventListener("keydown", onKey);
+          mask.remove();
+          resolve(val);
+        };
+        const onKey = (e) => { if (e.key === "Escape") close(false); };
+        btnCancel.onclick = () => close(false);
+        btnOk.onclick = () => close(true);
+        mask.onclick = (e) => { if (e.target === mask) close(false); };
+        window.addEventListener("keydown", onKey);
+        document.body.appendChild(mask);
+      });
+    }
+
     async function deleteProviderAction(id, name) {
-      if (!confirm(`确定删除渠道「${name}」吗？`)) return;
+      const ok = await azureConfirm({
+        title: "确认删除渠道",
+        message: `确定要删除渠道「${name}」吗？`,
+        note: "删除后将移除该渠道配置，无法撤销。",
+        okText: "确认删除",
+        danger: true
+      });
+      if (!ok) return;
       try {
         const res = await api("/api/provider/delete", { method: "POST", body: JSON.stringify({ id }) });
         state = res.state;
@@ -1411,6 +1577,11 @@
       document.getElementById("wk-cmd-timeout").value = wk.commandTimeoutMs ?? 60000;
       document.getElementById("wk-allow-outside").checked = Boolean(wk.allowOutsideWorkspace);
       document.getElementById("wk-per-turn-reinforce").checked = wk.perTurnReinforce !== false;
+      const topChk = document.getElementById("eo-top-reinforce");
+      const topStatus = document.getElementById("eo-top-reinforce-status");
+      const rOn = wk.perTurnReinforce !== false;
+      if (topChk) topChk.checked = rOn;
+      if (topStatus) topStatus.textContent = rOn ? "当前：已开启（外接模型）" : "当前：已关闭";
     }
 
     function renderFallbackItems(profileKey, fallbacks) {
@@ -1592,10 +1763,186 @@
       if (chkAll) chkAll.checked = runs.length > 0 && selectedRunIds.size === runs.length;
     }
 
+    let activeRunsPollTimer = null;
+    let activeRunsSse = null;
+    let sseRetryMs = 1500;
+    let sseConnected = false;
+    let prevActiveRunIds = new Set();
+
+    function formatLiveDuration(startedAt, durationMs) {
+      const ms = durationMs > 0 ? durationMs : (startedAt ? Math.max(0, Date.now() - startedAt) : 0);
+      if (ms < 1000) return ms + "ms";
+      return (ms / 1000).toFixed(1) + "s";
+    }
+
+    // 中央节点分派器（参考 Dispatch.vue：显式按工具/事件类型映射 + 未知类型兜底不白屏）
+    function dispatchStepNode(s) {
+      if (!s || typeof s !== "object") {
+        return `<div class="live-step-row"><span>[?unknown_step]</span></div>`;
+      }
+      const tool = String(s.tool || s.type || "").toLowerCase();
+      let badgeText = "步骤";
+      let badgeColor = "var(--accent, #7c9cff)";
+      if (/read|list|search|grep|find/.test(tool)) {
+        badgeText = "检索"; badgeColor = "#38bdf8";
+      } else if (/write|edit|patch|create|delete/.test(tool)) {
+        badgeText = "改动"; badgeColor = "#f5b942";
+      } else if (/cmd|exec|run|shell|terminal/.test(tool)) {
+        badgeText = "命令"; badgeColor = "#a78bfa";
+      } else if (/think|plan|reason|generate/.test(tool)) {
+        badgeText = "推理"; badgeColor = "#39c5bb";
+      } else if (tool) {
+        badgeText = "[?" + escapeHtml(tool.slice(0, 14)) + "]"; badgeColor = "var(--muted)";
+      }
+      return `
+        <div class="live-step-row">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid ${badgeColor};color:${badgeColor};flex-shrink:0;">${badgeText}</span>
+            <strong style="color:var(--text);">第 ${s.step || 0} 步</strong>
+            ${s.tool ? `<code>${escapeHtml(s.tool)}</code>` : ""}
+            ${s.summary ? `<span>— ${escapeHtml(s.summary)}</span>` : ""}
+          </div>
+          <span style="flex-shrink:0;color:${s.ok === false ? "var(--danger)" : "var(--ok)"};">
+            ${s.ok === false ? "异常" : "完成"}${s.durationMs ? " · " + (s.durationMs / 1000).toFixed(1) + "s" : ""}
+          </span>
+        </div>
+      `;
+    }
+
+    function renderActiveRuns() {
+      const box = document.getElementById("active-runs-section");
+      if (!box) return;
+      const list = (state && Array.isArray(state.activeRuns)) ? state.activeRuns : [];
+      const tabBtn = document.querySelector('button.tab[data-tab="runs"]');
+      if (tabBtn) {
+        tabBtn.textContent = list.length ? `执行监控 (${list.length} 运行中)` : "执行监控";
+      }
+      if (!list.length) {
+        box.innerHTML = `
+          <div class="live-strip">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="live-dot"></span>
+              <span><strong>实时工作状态：</strong>当前空闲待命中，主脑派发外部任务时将自动显示实时步骤与进度</span>
+            </div>
+            <span style="font-size:11px;opacity:0.78;">${sseConnected ? "SSE 实时连接" : "自动监测中"}</span>
+          </div>
+        `;
+        return;
+      }
+      box.innerHTML = list.map((r) => {
+        const pct = r.maxSteps > 0 ? Math.min(100, Math.max(6, Math.round((r.step / r.maxSteps) * 100))) : 35;
+        const recentSteps = Array.isArray(r.stepsLog) ? r.stepsLog.slice(-5).reverse() : [];
+        const stepsHtml = recentSteps.map((s) => dispatchStepNode(s)).join("");
+        return `
+          <div class="live-card">
+            <div class="run-head" style="margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                <span class="live-dot running"></span>
+                <span class="badge" style="background:rgba(124,156,255,0.2);color:var(--accent,#7c9cff);">正在执行</span>
+                <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : (r.mode ? "自主执行 · " + escapeHtml(r.mode) : "自主执行")}</span>
+                ${r.profile ? `<span class="badge neutral">${escapeHtml(r.profile)}</span>` : ""}
+                <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
+              </div>
+              <span style="font-size:12px;font-weight:600;color:var(--accent,#7c9cff);">已耗时 ${formatLiveDuration(r.startedAt, r.durationMs)}</span>
+            </div>
+            <div class="run-title" style="margin-bottom:4px;">${escapeHtml(r.taskPreview || "(正在执行外部任务)")}</div>
+            <div class="run-meta">
+              <span>进度: 第 ${r.step || 0}${r.maxSteps ? " / " + r.maxSteps : ""} 步</span>
+              ${r.currentAction ? `<span>当前动作: <strong>${escapeHtml(r.currentAction)}</strong></span>` : ""}
+              <span>文件变动: +${r.createdCount || 0} / ~${r.modifiedCount || 0}</span>
+              ${r.cwd ? `<span>目录: ${escapeHtml(r.cwd)}</span>` : ""}
+            </div>
+            <div class="live-progress-track"><div class="live-progress-fill" style="width:${pct}%;"></div></div>
+            ${stepsHtml ? `<div class="live-steps">${stepsHtml}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function applyActiveRunsUpdate(nextList, forceFinished) {
+      const list = Array.isArray(nextList) ? nextList : [];
+      const nextIds = new Set(list.map((r) => r.runId));
+      let finishedAny = Boolean(forceFinished);
+      if (!finishedAny) {
+        for (const oldId of prevActiveRunIds) {
+          if (!nextIds.has(oldId)) { finishedAny = true; break; }
+        }
+      }
+      prevActiveRunIds = nextIds;
+      if (state) state.activeRuns = list;
+      renderActiveRuns();
+      if (finishedAny) refreshAll().catch(() => {});
+    }
+
+    // 使用自适应短轮询替代长连接 SSE，避免 Webview HTTP/1.1 单域名 6 连接池被残留长连接占满导致界面卡死
+    function connectActiveRunsStream() {
+      if (activeRunsSse) {
+        try { activeRunsSse.close(); } catch {}
+        activeRunsSse = null;
+      }
+      sseConnected = false;
+      renderActiveRuns();
+      scheduleNextActivePoll(1500);
+    }
+
+    if (!window.__eoVisibilityPollBound) {
+      window.__eoVisibilityPollBound = true;
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) scheduleNextActivePoll(300);
+      });
+    }
+
+    async function pollActiveRuns() {
+      if (sseConnected) return;
+      if (document.hidden) {
+        scheduleNextActivePoll(3000);
+        return;
+      }
+      try {
+        const res = await api("/api/active-runs");
+        applyActiveRunsUpdate(res.activeRuns, false);
+        scheduleNextActivePoll((res.activeRuns && res.activeRuns.length > 0) ? 1200 : 2500);
+      } catch {
+        scheduleNextActivePoll(4000);
+      }
+    }
+
+    function scheduleNextActivePoll(delayMs) {
+      if (activeRunsPollTimer) clearTimeout(activeRunsPollTimer);
+      activeRunsPollTimer = setTimeout(pollActiveRuns, delayMs);
+    }
+
+    let onlyRunningFilter = false;
+    function toggleOnlyRunning() {
+      onlyRunningFilter = !onlyRunningFilter;
+      const btn = document.getElementById("btn-only-running");
+      if (btn) {
+        btn.classList.toggle("primary", onlyRunningFilter);
+        btn.textContent = onlyRunningFilter ? "显示全部" : "仅看运行中";
+      }
+      renderRuns();
+    }
+
+    function formatRunStatusLabel(st) {
+      if (st === "completed") return "已完成";
+      if (st === "failed") return "失败";
+      if (st === "running") return "执行中";
+      if (st === "max_steps_reached") return "达到步数上限";
+      return st || "-";
+    }
+
     function renderRuns() {
+      renderActiveRuns();
       updateBatchBar();
       const box = document.getElementById("runs-list");
       box.innerHTML = "";
+      if (onlyRunningFilter) {
+        const activeCount = (state.activeRuns || []).length;
+        box.innerHTML = activeCount
+          ? ""
+          : '<div class="card">当前没有正在运行的外部执行手任务，点击上方「显示全部」可查看历史记录~</div>';
+        return;
+      }
       const runs = state.runs || [];
       if (!runs.length) {
         box.innerHTML = '<div class="card">暂无执行记录，主脑委派任务后这里会实时展示进度和结果~</div>';
@@ -1612,7 +1959,7 @@
           <div class="run-head">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               ${batchSelectMode ? `<input type="checkbox" class="run-batch-chk" style="width:auto;cursor:pointer;" ${isChecked ? "checked" : ""} onclick="event.stopPropagation(); toggleSelectRun('${escapeHtml(r.id)}', this.checked)" />` : ""}
-              <span class="badge ${statusClass}">${escapeHtml(r.status)}</span>
+              <span class="badge ${statusClass}">${escapeHtml(formatRunStatusLabel(r.status))}</span>
               <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
               ${r.fallbackUsed ? '<span class="badge warn">已触发 Fallback</span>' : ""}
               <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
@@ -1665,7 +2012,7 @@
         card.innerHTML = `
           <div class="run-head">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span class="badge ${statusClass}">${escapeHtml(r.status)}</span>
+              <span class="badge ${statusClass}">${escapeHtml(formatRunStatusLabel(r.status))}</span>
               <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
               <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
             </div>
@@ -2019,7 +2366,15 @@
     }
 
     try { applyTheme(localStorage.getItem("eo_console_theme") || "dark"); } catch {}
-    refreshAll().catch((e) => toast("加载控制台失败：" + e.message, true));
+    refreshAll()
+      .then(() => {
+        prevActiveRunIds = new Set(((state && state.activeRuns) || []).map((r) => r.runId));
+        connectActiveRunsStream();
+      })
+      .catch((e) => {
+        toast("加载控制台失败：" + e.message, true);
+        connectActiveRunsStream();
+      });
   </script>
 
 <!-- AGY_UPDATE_CHECKER_WIDGET -->
