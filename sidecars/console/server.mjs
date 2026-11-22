@@ -204,6 +204,18 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 200, { ok: true, state: buildStatePayload() });
         return;
       }
+      if (req.method === "POST" && pathname === "/api/routing/profile") {
+        const body = await readBody(req);
+        store.upsertRoutingProfile(body);
+        sendJson(res, 200, { ok: true, state: buildStatePayload() });
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/routing/profile/delete") {
+        const body = await readBody(req);
+        store.deleteRoutingProfile(body.key);
+        sendJson(res, 200, { ok: true, state: buildStatePayload() });
+        return;
+      }
       if (req.method === "POST" && pathname === "/api/reinforce") {
         const body = await readBody(req);
         store.updateRoutingAndSettings({ worker: { perTurnReinforce: Boolean(body.enabled) } });

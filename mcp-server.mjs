@@ -182,7 +182,7 @@ async function handleLine(line) {
         sendResponse(id, {
           protocolVersion: params?.protocolVersion || "2024-11-05",
           capabilities: { tools: {}, resources: {} },
-          serverInfo: { name: "external-orchestrator", version: "1.3.0" }
+          serverInfo: { name: "external-orchestrator", version: "1.4.0" }
         });
         break;
       case "ping":

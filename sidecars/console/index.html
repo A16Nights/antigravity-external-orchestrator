@@ -152,11 +152,13 @@
     .presets-bar {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
       align-items: center;
+      padding: 11px 16px;
+      border-radius: 14px;
       margin-bottom: 14px;
     }
-    .presets-label { color: var(--muted); font-size: 12px; margin-right: 4px; }
+    .presets-label { color: var(--muted); font-size: 12.5px; font-weight: 500; margin-right: 4px; }
 
     /* DSH-style provider rows */
     .provider-list { display: flex; flex-direction: column; gap: 10px; }
@@ -591,7 +593,7 @@
       <p class="subtitle">填入各提供商的 API 密钥或接入本地转发端口，主脑（Antigravity）即可按角色自动调度这些外部模型干活。</p>
       <div class="presets-bar">
         <span class="presets-label">快速添加渠道：</span>
-        <div id="preset-buttons" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <div id="preset-buttons" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"></div>
       </div>
       <div id="providers-list" class="provider-list"></div>
     </section>
@@ -601,8 +603,11 @@
       <p class="subtitle">为不同任务角色指定首选外部模型与自动容灾备用链（Fallback）。当主渠道连续报错达到阈值时，断路器会暂时熔断并无缝切换下一顺位渠道。</p>
       <div class="card">
         <h3>
-          <span>默认调度角色</span>
-          <button class="btn primary sm" onclick="saveRoutingSettings()">保存全部设置</button>
+          <span>默认调度角色与角色管理</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn sm" onclick="openProfileModal()">+ 新建调度角色</button>
+            <button class="btn primary sm" onclick="saveRoutingSettings()">保存全部设置</button>
+          </div>
         </h3>
         <div class="grid-2" style="gap:10px;align-items:end;">
           <div class="field" style="margin-bottom:0;">
@@ -853,6 +858,58 @@
       <div class="modal-foot">
         <button class="btn" onclick="closeProviderModal()">取消</button>
         <button class="btn primary" onclick="saveProviderModal()">保存渠道</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal (新建 / 编辑调度角色) -->
+  <div id="profile-modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeProfileModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="prof-modal-title">新建调度角色</h2>
+        <button class="btn sm" onclick="closeProfileModal()">✕</button>
+      </div>
+      <input type="hidden" id="prof-modal-is-edit" value="false" />
+      <div class="grid-2" style="gap:10px;">
+        <div class="field">
+          <label>角色 ID（英文标识）*</label>
+          <input id="prof-modal-key" type="text" placeholder="例如：reviewer / translator / architect" />
+          <div class="hint">派单时传入 profile 参数的标识（字母、数字、-、_）。</div>
+        </div>
+        <div class="field">
+          <label>角色显示名称 *</label>
+          <input id="prof-modal-label" type="text" placeholder="例如：代码审查员 / 文档翻译官" />
+          <div class="hint">在执行监控与控制台卡片中展示的中文名称。</div>
+        </div>
+        <div class="field">
+          <label>默认权限模式</label>
+          <select id="prof-modal-mode">
+            <option value="">跟随全局默认设置</option>
+            <option value="readonly">readonly（仅只读探索）</option>
+            <option value="edit">edit（读写改文件）</option>
+            <option value="full">full（允许跑终端命令）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>首选模型 (Primary)</label>
+          <select id="prof-modal-primary"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>角色说明（适用场景）</label>
+        <input id="prof-modal-desc" type="text" placeholder="例如：专注于只读代码审查、边界条件检查与潜在缺陷排查" />
+      </div>
+      <div class="field">
+        <label>角色专属 System Prompt（可选）</label>
+        <textarea id="prof-modal-sysprompt" rows="3" placeholder="可选：使用该角色执行任务或单轮生成时，自动附加的系统提示词约束..."></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:4px;font-size:12px;">
+        <input id="prof-modal-default-chk" type="checkbox" style="width:auto;" />
+        将该角色设为未指定 profile 时的默认调度角色
+      </label>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeProfileModal()">取消</button>
+        <button class="btn primary" onclick="saveProfileModal()">保存角色</button>
       </div>
     </div>
   </div>
@@ -1521,16 +1578,30 @@
 
       const grid = document.getElementById("profiles-grid");
       grid.innerHTML = "";
+      const builtinKeys = new Set(["default", "coder", "fast", "reasoner"]);
       for (const [key, prof] of Object.entries(routing.profiles || {})) {
         const card = document.createElement("div");
         card.className = "card";
         card.dataset.profileKey = key;
         const fallbacks = Array.isArray(prof.fallbacks) ? prof.fallbacks : [];
+        const isBuiltin = prof.builtin !== undefined ? Boolean(prof.builtin) : builtinKeys.has(key);
+        const isDefault = key === routing.defaultProfile;
         card.innerHTML = `
-          <h3>
-            <span>${escapeHtml(prof.label || key)}</span>
-            <span class="badge neutral">${escapeHtml(key)}</span>
+          <h3 style="align-items:flex-start;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span>${escapeHtml(prof.label || key)}</span>
+              <span class="badge neutral">${escapeHtml(key)}</span>
+              ${isDefault ? '<span class="badge ok">默认</span>' : ""}
+              ${!isBuiltin ? '<span class="badge" style="background:rgba(56,189,248,0.14);color:#38bdf8;">自定义</span>' : ""}
+              ${prof.defaultMode ? `<span class="badge neutral" title="角色默认权限模式">模式: ${escapeHtml(prof.defaultMode)}</span>` : ""}
+              ${prof.systemPrompt ? '<span class="badge neutral" title="已配置角色专属 System Prompt">含专属指令</span>' : ""}
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <button type="button" class="btn sm" style="padding:2px 8px;font-size:11px;" onclick="openProfileModal('${escapeHtml(key)}')">设定</button>
+              ${!isBuiltin ? `<button type="button" class="btn danger sm" style="padding:2px 8px;font-size:11px;" onclick="confirmDeleteProfile('${escapeHtml(key)}')">删除</button>` : ""}
+            </div>
           </h3>
+          ${prof.description ? `<div class="hint" style="margin:-2px 0 8px 0;">${escapeHtml(prof.description)}</div>` : ""}
           <div class="field">
             <label>首选模型 (Primary)</label>
             <select class="prof-primary" data-profile="${escapeHtml(key)}">
@@ -1551,6 +1622,20 @@
         grid.appendChild(card);
         renderFallbackItems(key, fallbacks);
       }
+
+      // 末尾追加「+ 新建调度角色」虚线卡片
+      const addCard = document.createElement("div");
+      addCard.className = "card";
+      addCard.style.cssText = "border:1.5px dashed var(--border, rgba(148,163,184,0.32));background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px;cursor:pointer;transition:all .18s ease;opacity:0.85;";
+      addCard.onmouseenter = () => { addCard.style.opacity = "1"; addCard.style.borderColor = "var(--accent, #7c9cff)"; };
+      addCard.onmouseleave = () => { addCard.style.opacity = "0.85"; addCard.style.borderColor = "var(--border, rgba(148,163,184,0.32))"; };
+      addCard.onclick = () => openProfileModal();
+      addCard.innerHTML = `
+        <div style="font-size:22px;line-height:1;margin-bottom:6px;color:var(--accent,#7c9cff);">＋</div>
+        <div style="font-size:13px;font-weight:600;">新建自定义调度角色</div>
+        <div class="hint" style="margin-top:4px;text-align:center;">自定义角色名称、首选模型、容灾链与专属提示词</div>
+      `;
+      grid.appendChild(addCard);
 
       const cb = state.config.circuitBreaker || {};
       document.getElementById("cb-enabled").value = String(cb.enabled !== false);
@@ -1646,6 +1731,9 @@
         const fbBox = document.querySelector(`[data-fb-list="${key}"]`);
         routingProfiles[key] = {
           label: orig.label || key,
+          description: orig.description || "",
+          defaultMode: orig.defaultMode || "",
+          systemPrompt: orig.systemPrompt || "",
           primary: primaryEl ? primaryEl.value : orig.primary,
           fallbacks: fbBox?._fallbacks || orig.fallbacks || []
         };
@@ -1688,6 +1776,116 @@
       } catch (e) {
         toast(e.message, true);
       }
+    }
+
+    function openProfileModal(profileKey) {
+      const isEdit = Boolean(profileKey);
+      const routing = state.config.routing || { defaultProfile: "default", profiles: {} };
+      const prof = isEdit ? (routing.profiles?.[profileKey] || {}) : {};
+      const curPrimaryEl = isEdit ? document.querySelector(`.prof-primary[data-profile="${profileKey}"]`) : null;
+      const curPrimary = curPrimaryEl ? curPrimaryEl.value : (prof.primary || "");
+
+      document.getElementById("prof-modal-is-edit").value = isEdit ? "true" : "false";
+      document.getElementById("prof-modal-title").textContent = isEdit ? `编辑调度角色设定 (${profileKey})` : "新建自定义调度角色";
+      const keyInput = document.getElementById("prof-modal-key");
+      keyInput.value = isEdit ? profileKey : "";
+      keyInput.disabled = isEdit;
+      document.getElementById("prof-modal-label").value = isEdit ? (prof.label || profileKey) : "";
+      document.getElementById("prof-modal-mode").value = isEdit ? (prof.defaultMode || "") : "";
+      document.getElementById("prof-modal-desc").value = isEdit ? (prof.description || "") : "";
+      document.getElementById("prof-modal-sysprompt").value = isEdit ? (prof.systemPrompt || "") : "";
+      document.getElementById("prof-modal-default-chk").checked = isEdit ? (routing.defaultProfile === profileKey) : false;
+
+      const primarySel = document.getElementById("prof-modal-primary");
+      primarySel.innerHTML = buildModelSelectOptions(curPrimary, "");
+
+      const modal = document.getElementById("profile-modal");
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+    }
+
+    function closeProfileModal() {
+      const modal = document.getElementById("profile-modal");
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+
+    async function saveProfileModal() {
+      const isEdit = document.getElementById("prof-modal-is-edit").value === "true";
+      const key = document.getElementById("prof-modal-key").value.trim();
+      const label = document.getElementById("prof-modal-label").value.trim();
+      const defaultMode = document.getElementById("prof-modal-mode").value;
+      const primary = document.getElementById("prof-modal-primary").value;
+      const description = document.getElementById("prof-modal-desc").value.trim();
+      const systemPrompt = document.getElementById("prof-modal-sysprompt").value.trim();
+      const setAsDefault = document.getElementById("prof-modal-default-chk").checked;
+
+      if (!key) {
+        toast("请填写角色 ID（英文标识）", true);
+        return;
+      }
+      if (!/^[a-zA-Z0-9_-]{1,32}$/.test(key)) {
+        toast("角色 ID 仅允许 1~32 位字母、数字、连字符(-)或下划线(_)", true);
+        return;
+      }
+      if (!isEdit && state.config.routing?.profiles?.[key]) {
+        toast(`角色 ID "${key}" 已存在，请换一个或直接编辑该角色`, true);
+        return;
+      }
+      if (!label) {
+        toast("请填写角色显示名称", true);
+        return;
+      }
+
+      const fbBox = document.querySelector(`[data-fb-list="${key}"]`);
+      const existingFallbacks = fbBox?._fallbacks || state.config.routing?.profiles?.[key]?.fallbacks || [];
+
+      try {
+        const res = await api("/api/routing/profile", {
+          method: "POST",
+          body: JSON.stringify({
+            key,
+            label,
+            defaultMode,
+            primary,
+            description,
+            systemPrompt,
+            fallbacks: existingFallbacks,
+            setAsDefault
+          })
+        });
+        state = res.state;
+        closeProfileModal();
+        renderAll();
+        toast(isEdit ? `角色「${label}」设定已更新` : `已创建调度角色「${label} (${key})」`);
+      } catch (e) {
+        toast("保存角色失败：" + e.message, true);
+      }
+    }
+
+    function confirmDeleteProfile(profileKey) {
+      const prof = state.config.routing?.profiles?.[profileKey];
+      const label = prof?.label || profileKey;
+      const isDef = state.config.routing?.defaultProfile === profileKey;
+      openConfirmModal({
+        title: "确认删除调度角色",
+        message: `确定要删除自定义调度角色「${label} (${profileKey})」吗？${isDef ? "该角色当前为默认角色，删除后将自动切回 default。" : ""}`,
+        confirmText: "确认删除",
+        danger: true,
+        onConfirm: async () => {
+          try {
+            const res = await api("/api/routing/profile/delete", {
+              method: "POST",
+              body: JSON.stringify({ key: profileKey })
+            });
+            state = res.state;
+            renderAll();
+            toast(`已删除调度角色「${label}」`);
+          } catch (e) {
+            toast("删除失败：" + e.message, true);
+          }
+        }
+      });
     }
 
     // Runs Monitoring & Archive
@@ -1840,7 +2038,7 @@
                 <span class="live-dot running"></span>
                 <span class="badge" style="background:rgba(124,156,255,0.2);color:var(--accent,#7c9cff);">正在执行</span>
                 <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : (r.mode ? "自主执行 · " + escapeHtml(r.mode) : "自主执行")}</span>
-                ${r.profile ? `<span class="badge neutral">${escapeHtml(r.profile)}</span>` : ""}
+                ${renderProfileBadgeHtml(r)}
                 <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
               </div>
               <span style="font-size:12px;font-weight:600;color:var(--accent,#7c9cff);">已耗时 ${formatLiveDuration(r.startedAt, r.durationMs)}</span>
@@ -1931,6 +2129,29 @@
       return st || "-";
     }
 
+    function resolveProfileLabel(profileKey, fallbackLabel) {
+      const key = String(profileKey || "").trim();
+      if (!key) return "";
+      const prof = state?.config?.routing?.profiles?.[key];
+      if (prof && prof.label) return prof.label;
+      if (fallbackLabel) return fallbackLabel;
+      const builtinMap = {
+        default: "默认执行手",
+        coder: "代码与文件修改",
+        fast: "轻量快速处理",
+        reasoner: "深度分析辅助"
+      };
+      return builtinMap[key] || key;
+    }
+
+    function renderProfileBadgeHtml(run) {
+      const key = String(run?.profile || "").trim();
+      if (!key) return "";
+      const label = resolveProfileLabel(key, run?.profileLabel);
+      const display = label && label !== key ? `${label} (${key})` : key;
+      return `<span class="badge" style="background:rgba(56,189,248,0.14);color:#38bdf8;border:1px solid rgba(56,189,248,0.28);" title="调度角色: ${escapeHtml(display)}">角色 · ${escapeHtml(display)}</span>`;
+    }
+
     function renderRuns() {
       renderActiveRuns();
       updateBatchBar();
@@ -1960,7 +2181,8 @@
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               ${batchSelectMode ? `<input type="checkbox" class="run-batch-chk" style="width:auto;cursor:pointer;" ${isChecked ? "checked" : ""} onclick="event.stopPropagation(); toggleSelectRun('${escapeHtml(r.id)}', this.checked)" />` : ""}
               <span class="badge ${statusClass}">${escapeHtml(formatRunStatusLabel(r.status))}</span>
-              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
+              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : (r.mode ? "自主执行 · " + escapeHtml(r.mode) : "自主执行")}</span>
+              ${renderProfileBadgeHtml(r)}
               ${r.fallbackUsed ? '<span class="badge warn">已触发 Fallback</span>' : ""}
               <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
             </div>
@@ -2013,7 +2235,8 @@
           <div class="run-head">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <span class="badge ${statusClass}">${escapeHtml(formatRunStatusLabel(r.status))}</span>
-              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : "自主执行"}</span>
+              <span class="badge neutral">${r.kind === "generate" ? "单轮生成" : (r.mode ? "自主执行 · " + escapeHtml(r.mode) : "自主执行")}</span>
+              ${renderProfileBadgeHtml(r)}
               <span style="font-size:12px;color:var(--muted);">${escapeHtml(r.providerId || "-")} : ${escapeHtml(r.model || "-")}</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
@@ -2132,8 +2355,12 @@
           `).join("")}
         </div>
       `).join("");
+      const profKey = String(detail.profile || "").trim();
+      const profLabel = profKey ? resolveProfileLabel(profKey, detail.profileLabel) : "";
+      const profDisplay = profKey ? (profLabel && profLabel !== profKey ? `${profLabel} (${profKey})` : profKey) : "";
       return `
         <div class="run-detail">
+          ${profDisplay ? `<div class="hint" style="margin-bottom:4px;"><strong>调度角色：</strong>${escapeHtml(profDisplay)}${detail.mode ? ` · <strong>权限模式：</strong>${escapeHtml(detail.mode)}` : ""}</div>` : ""}
           <div class="hint"><strong>完整任务：</strong>${escapeHtml(detail.task)}</div>
           ${files.length ? `<div class="hint" style="margin-top:4px;"><strong>涉及文件：</strong>${escapeHtml(files.join("，"))}</div>` : ""}
           ${traceHtml ? `<div style="margin-top:8px;"><div class="hint" style="margin-bottom:4px;"><strong>工具调用轨迹：</strong></div>${traceHtml}</div>` : ""}
