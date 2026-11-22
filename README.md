@@ -1,12 +1,62 @@
-# ✦ 苍蓝协奏台 · External Orchestrator (`antigravity-external-orchestrator`)
+<div align="center">
 
-面向 **Google Antigravity** 的零依赖多渠道外部模型协同调度插件：**由主脑（Antigravity）负责轻量思考规划、派单指令与最终抽查验收，将消耗大量 Token 的多文件阅读、代码编写、命令排查与长文本生成自动委派给高性价比外部模型（DeepSeek / OpenAI 兼容 / Anthropic 兼容 / OpenRouter / Kimi / 本地聚合网关 / Ollama）执行**。
+<p>🌐 &nbsp; <strong>简体中文</strong> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
 
-不动 `app.asar`，完全基于 Antigravity 官方标准的 **MCP Server + Sidecar Web UI + MCP App 内联进度卡片 + Skill + Rule + Lifecycle Hook** 架构构建，客户端版本升级无忧。
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/hero-dark.svg">
+  <img src="assets/readme/hero-light.svg" alt="苍蓝协奏台 · External Orchestrator" width="100%">
+</picture>
 
----
+<p>
+  [![Release](https://img.shields.io/github/v/release/A16Nights/antigravity-external-orchestrator?style=flat-square&label=Release&color=38bdf8&labelColor=1e293b)](https://github.com/A16Nights/antigravity-external-orchestrator/releases)
+  [![Stars](https://img.shields.io/github/stars/A16Nights/antigravity-external-orchestrator?style=flat-square&label=Stars&color=f59e0b&labelColor=1e293b)](https://github.com/A16Nights/antigravity-external-orchestrator/stargazers)
+  ![Antigravity](https://img.shields.io/badge/Google_Antigravity-Native_Plugin-38bdf8?style=flat-square&labelColor=1e293b)
+  ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-10b981?style=flat-square&labelColor=1e293b)
+  ![Zero Deps](https://img.shields.io/badge/Dependencies-Zero-06b6d4?style=flat-square&labelColor=1e293b)
+  [![License](https://img.shields.io/badge/License-MIT-6366f1?style=flat-square&labelColor=1e293b)](./LICENSE)
+</p>
 
-## ✨ 功能全景
+<p>
+  <strong>主脑负责轻量思考规划与最终验收，将重度读文件、写代码、跑命令与长文本生成委派给高性价比外部模型执行</strong>
+</p>
+
+<p>
+  <a href="#features">✨ 功能全景</a> &nbsp;·&nbsp; <a href="#architecture">🧩 工作原理</a> &nbsp;·&nbsp; <a href="#installation">🚀 快速安装</a> &nbsp;·&nbsp; <a href="#mcp-tools">🧰 MCP 工具</a> &nbsp;·&nbsp; <a href="#storage">📂 数据存储</a> &nbsp;·&nbsp; <a href="#azure-suite">🌌 苍蓝全家桶</a>
+</p>
+
+</div>
+
+面向 **Google Antigravity** 的零依赖多渠道外部模型协同调度插件。完全基于 Antigravity 官方标准的 **MCP Server + Sidecar Web UI + MCP App 内联进度卡片 + Skill + Rule + Lifecycle Hook** 架构构建，不动 `app.asar`，客户端版本升级无忧。
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<h4>🧠 主脑主动省流派单</h4>
+内置 <code>rules/AGENTS.md</code> 协作铁律与 <code>external-model-guard</code> 外接模型智能提醒，自动把多文件阅读、>15 行编码、命令排查与长文本起草委派给外部模型。
+</td>
+<td width="50%" valign="top">
+<h4>🎭 无限自定义调度角色</h4>
+内置 4 大角色 + 自由新建/编辑/删除自定义角色，独立绑定中文名、默认权限模式、首选模型、容灾链与专属 System Prompt。
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<h4>⚡ 自动断路器与容灾链</h4>
+支持 OpenAI / Anthropic 双协议及 DeepSeek <code>reasoning_content</code> 透传；连续失败或 429/5xx 自动熔断并按序切换备用模型。
+</td>
+<td width="50%" valign="top">
+<h4>📊 全链路监控与归档箱</h4>
+聊天内联进度卡片 + 控制台实时步数、工具调用轨迹与蓝色 <code>角色 · 中文名 (ID)</code> 徽章，支持批量归档与独立归档箱恢复。
+</td>
+</tr>
+</table>
+
+<h2 id="features">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-features-dark.svg">
+  <img src="assets/readme/sec-features-light.svg" alt="功能全景" width="100%">
+</picture>
+</h2>
 
 ### 1. 主脑主动派单与外接模型智能强化
 - **开箱即用的省 Token 协作规范（`rules/AGENTS.md`）**：
@@ -50,13 +100,38 @@
 ### 6. 苍蓝统一视觉与交互体系
 - **Neko Glass 毛玻璃界面 & 苍蓝主题色调中心**：深色/浅色切换、自定义毛玻璃下拉框与确认弹窗、6 套官方主题预设 + 自定义双色 + 4 个自定义栏位跨插件同步、左侧栏快捷入口开关、独立浏览器全屏 `Web UI` 与 GitHub Release 在线更新检查。
 
----
+<h2 id="architecture">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-arch-dark.svg">
+  <img src="assets/readme/sec-arch-light.svg" alt="工作原理与架构" width="100%">
+</picture>
+</h2>
 
-## 🚀 安装方法
+```mermaid
+flowchart LR
+  A["Antigravity 主脑<br/>轻量规划与最终验收"] -->|"worker_execute / worker_generate"| B["调度角色路由 Profile<br/>内置 4 角色 + 自定义角色"]
+  B --> C{"断路器 & 容灾链<br/>Primary → Fallbacks"}
+  C -->|"OpenAI / Anthropic 协议"| D["外部模型渠道<br/>DeepSeek / Kimi / Ollama 等"]
+  D -->|"受控沙箱: readonly / edit / full"| E["工作区读写 & 命令执行"]
+  E -->|"实时进度与改动摘要"| F["MCP App 内联卡片<br/>+ 控制台监控与归档箱"]
+```
 
-> 前置要求：**Node.js >= 20.0.0**（零第三方 npm 依赖，纯 Node.js 原生 ESM 实现）。
+<h2 id="installation">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-install-dark.svg">
+  <img src="assets/readme/sec-install-light.svg" alt="快速安装与上手" width="100%">
+</picture>
+</h2>
 
-将本仓库克隆到 Antigravity 的全局插件目录（目录名固定为 `external-orchestrator`）：
+> **前置要求**：**Node.js >= 20.0.0**（零第三方 npm 运行时依赖，纯 Node.js 原生 ESM 实现）。
+
+### 方式一 · 一句话让 Antigravity 帮你自动安装（推荐）
+
+直接把下面这句话发给 Antigravity 即可自动完成克隆与核验：
+
+> 帮我把 `https://github.com/A16Nights/antigravity-external-orchestrator.git` 克隆到本机 Antigravity 全局插件目录，目录名设为 `external-orchestrator`，检查目录无误后告诉我，我再按 `Ctrl+R` 重载生效。
+
+### 方式二 · 命令行手动克隆
 
 ```powershell
 # Windows (PowerShell)
@@ -68,11 +143,14 @@ git clone https://github.com/A16Nights/antigravity-external-orchestrator.git ~/.
 
 重启或重载 Antigravity（`Ctrl+R`），插件的 MCP 工具、右侧「苍蓝协奏台」面板以及主动调度规则即自动挂载生效。
 
-*(也可脱离 Antigravity 单独启动 Web 控制台：`node sidecars/console/server.mjs`，在浏览器访问终端输出的本地地址)*
+> 💡 也可脱离 Antigravity 单独启动 Web 控制台：`node sidecars/console/server.mjs`，在浏览器访问终端输出的本地地址。
 
----
-
-## 🧰 MCP 工具一览（5 个）
+<h2 id="mcp-tools">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-tools-dark.svg">
+  <img src="assets/readme/sec-tools-light.svg" alt="MCP 工具一览" width="100%">
+</picture>
+</h2>
 
 | 工具名 | 作用 |
 | --- | --- |
@@ -82,17 +160,49 @@ git clone https://github.com/A16Nights/antigravity-external-orchestrator.git ~/.
 | `worker_test_provider` | 测试指定外部模型渠道的连通性、协议兼容性与响应延迟 |
 | `worker_history` | 查看近期外部执行手任务记录列表（含调度角色名称、耗时、Token），或按 `runId` 查看完整工具调用轨迹 |
 
----
+<h2 id="storage">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-storage-dark.svg">
+  <img src="assets/readme/sec-storage-light.svg" alt="数据与配置存储" width="100%">
+</picture>
+</h2>
 
-## 📂 数据与配置存储
+<details open>
+<summary><strong>点击展开查看本机数据目录与苍蓝套件共享配置路径</strong></summary>
+
+<br>
 
 - **渠道、密钥与调度角色路由配置**：`~/.gemini/external-orchestrator/config.json`
 - **断路器状态与实时运行进度**：`~/.gemini/external-orchestrator/breaker-state.json`、`active-runs.json`
 - **历史运行记录与完整轨迹**：`~/.gemini/external-orchestrator/runs/`
 - **苍蓝套件共享主题 / 左侧栏配置**：`~/.gemini/azure-theme.json`、`~/.gemini/azure-sidebar-nav.json`
 
+</details>
+
+<h2 id="azure-suite">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-suite-dark.svg">
+  <img src="assets/readme/sec-suite-light.svg" alt="苍蓝套件全家桶" width="100%">
+</picture>
+</h2>
+
+**苍蓝套件（Azure Suite）** 8 款插件共享统一的 **Neko Glass 毛玻璃界面**、跨插件同步的 **苍蓝主题色调中心**（`~/.gemini/azure-theme.json`）以及可自由开关的 **左侧栏快捷入口**（`~/.gemini/azure-sidebar-nav.json`）：
+
+| 插件 | 仓库 | 核心能力 |
+| --- | --- | --- |
+| ✦ **苍蓝协奏台** &nbsp;`✦ 当前仓库` | [antigravity-external-orchestrator](https://github.com/A16Nights/antigravity-external-orchestrator) | 多渠道外部模型协同调度、自定义调度角色、容灾断路器与全链路实时监控 |
+| 🪐 **苍蓝星轨** | [antigravity-azure-orbit](https://github.com/A16Nights/antigravity-azure-orbit) | 将外部大模型直接挂载进 Antigravity 左下角原生模型下拉菜单担任主脑 |
+| 🧭 **苍蓝罗盘** | [antigravity-azure-compass](https://github.com/A16Nights/antigravity-azure-compass) | Agent 工作模式预设中心、上下文水位监测与自动 /compact、苍蓝套件左侧栏总控 |
+| 🏛️ **苍蓝回廊** | [antigravity-azure-corridor](https://github.com/A16Nights/antigravity-azure-corridor) | 只读原生会话 FTS5 全文检索、自定义项目分组、优先级标签与独立安全归档箱 |
+| 🌌 **蓝汐 · 潮汐认知图谱** | [antigravity-lanxi-memory](https://github.com/A16Nights/antigravity-lanxi-memory) | 五层纯 Markdown 真源记忆、CJK FTS5、潮汐遗忘曲线与交互式潮汐星海图谱 |
+| 💎 **苍蓝魂匣** | [antigravity-soul-md](https://github.com/A16Nights/antigravity-soul-md) | 多人设卡热切换、工作区专属绑定、外接模型智能防掉线锚点与分层文件记忆 |
+| 💭 **思语中文** | [antigravity-think-zh](https://github.com/A16Nights/antigravity-think-zh) | 内部思考语言简体中文 / 英文双档热切换、双通道防漂移与实时注入预览 |
+| 🔮 **苍蓝棱镜** | [antigravity-azure-prism](https://github.com/A16Nights/antigravity-azure-prism) | 原生 MCP App 思维链实时观测、免密钥零 Token 机翻与外部模型双通道译文 |
+
 ---
 
-## 📄 License
+<div align="center">
 
-[MIT](./LICENSE)
+📄 Released under the **[MIT License](./LICENSE)** · Crafted for **Google Antigravity**
+
+</div>
