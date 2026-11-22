@@ -21,7 +21,7 @@
 </p>
 
 <p>
-  <a href="#features">✨ Features</a> &nbsp;·&nbsp; <a href="#architecture">🧩 Architecture</a> &nbsp;·&nbsp; <a href="#installation">🚀 Quick Start</a> &nbsp;·&nbsp; <a href="#mcp-tools">🧰 MCP Tools</a> &nbsp;·&nbsp; <a href="#storage">📂 Storage</a> &nbsp;·&nbsp; <a href="#azure-suite">🌌 Azure Suite</a>
+  <a href="#preview">🖼️ Preview</a> &nbsp;·&nbsp; <a href="#features">✨ Features</a> &nbsp;·&nbsp; <a href="#architecture">🧩 Architecture</a> &nbsp;·&nbsp; <a href="#installation">🚀 Quick Start</a> &nbsp;·&nbsp; <a href="#mcp-tools">🧰 MCP Tools</a> &nbsp;·&nbsp; <a href="#storage">📂 Storage</a> &nbsp;·&nbsp; <a href="#azure-suite">🌌 Azure Suite</a>
 </p>
 
 </div>
@@ -47,6 +47,40 @@ Native OpenAI-compatible (including DeepSeek <code>reasoning_content</code> pass
 <td width="50%" valign="top">
 <h4>📊 Live Telemetry & Safe Archive</h4>
 Real-time inline MCP App progress cards, execution monitor, full tool-call trace playback, persistent profile badges, and a dedicated Archive Box.
+</td>
+</tr>
+</table>
+
+<h2 id="preview">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-preview-en-dark.svg">
+  <img src="assets/readme/sec-preview-en-light.svg" alt="Interface Preview" width="100%">
+</picture>
+</h2>
+
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-monitor.png"><img src="assets/readme/preview-monitor.png" alt="Live Execution Monitor &amp; Profile Badges" width="100%"></a>
+  <br><strong>Live Execution Monitor &amp; Profile Badges</strong>
+  <br><sub>Real-time status bar, external-model reminder switch, profile badges, step/token stats &amp; archiving</sub>
+</td>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-providers.png"><img src="assets/readme/preview-providers.png" alt="Multi-Provider Management &amp; Quick Presets" width="100%"></a>
+  <br><strong>Multi-Provider Management</strong>
+  <br><sub>7 quick-add provider presets with per-provider toggle, connectivity tests &amp; model editing</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-routing.png"><img src="assets/readme/preview-routing.png" alt="Custom Routing Profiles &amp; Fallback Chains" width="100%"></a>
+  <br><strong>Routing Profiles &amp; Fallback Chains</strong>
+  <br><sub>4 built-in profiles + unlimited custom profiles with independent primary models &amp; ordered fallbacks</sub>
+</td>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-breaker-sandbox.png"><img src="assets/readme/preview-breaker-sandbox.png" alt="Circuit Breaker &amp; Sandbox Policies" width="100%"></a>
+  <br><strong>Circuit Breaker &amp; Sandbox Policies</strong>
+  <br><sub>Live provider health, failure threshold &amp; cooldown, plus default permission mode, step caps &amp; cwd guard</sub>
 </td>
 </tr>
 </table>

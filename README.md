@@ -21,7 +21,7 @@
 </p>
 
 <p>
-  <a href="#features">✨ 功能全景</a> &nbsp;·&nbsp; <a href="#architecture">🧩 工作原理</a> &nbsp;·&nbsp; <a href="#installation">🚀 快速安装</a> &nbsp;·&nbsp; <a href="#mcp-tools">🧰 MCP 工具</a> &nbsp;·&nbsp; <a href="#storage">📂 数据存储</a> &nbsp;·&nbsp; <a href="#azure-suite">🌌 苍蓝全家桶</a>
+  <a href="#preview">🖼️ 界面预览</a> &nbsp;·&nbsp; <a href="#features">✨ 功能全景</a> &nbsp;·&nbsp; <a href="#architecture">🧩 工作原理</a> &nbsp;·&nbsp; <a href="#installation">🚀 快速安装</a> &nbsp;·&nbsp; <a href="#mcp-tools">🧰 MCP 工具</a> &nbsp;·&nbsp; <a href="#storage">📂 数据存储</a> &nbsp;·&nbsp; <a href="#azure-suite">🌌 苍蓝全家桶</a>
 </p>
 
 </div>
@@ -47,6 +47,40 @@
 <td width="50%" valign="top">
 <h4>📊 全链路监控与归档箱</h4>
 聊天内联进度卡片 + 控制台实时步数、工具调用轨迹与蓝色 <code>角色 · 中文名 (ID)</code> 徽章，支持批量归档与独立归档箱恢复。
+</td>
+</tr>
+</table>
+
+<h2 id="preview">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/sec-preview-dark.svg">
+  <img src="assets/readme/sec-preview-light.svg" alt="界面预览" width="100%">
+</picture>
+</h2>
+
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-monitor.png"><img src="assets/readme/preview-monitor.png" alt="执行监控与调度角色徽章" width="100%"></a>
+  <br><strong>执行监控与调度角色徽章</strong>
+  <br><sub>实时运行状态、外接模型前置提醒开关、调度角色徽章、步数/Token 统计与一键归档</sub>
+</td>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-providers.png"><img src="assets/readme/preview-providers.png" alt="多渠道模型管理与快速添加" width="100%"></a>
+  <br><strong>多渠道模型管理</strong>
+  <br><sub>7 大主流渠道一键预设添加，支持单渠道启停、连通性测试与模型列表编辑</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-routing.png"><img src="assets/readme/preview-routing.png" alt="自定义调度角色与容灾备用链" width="100%"></a>
+  <br><strong>调度角色与容灾备用链</strong>
+  <br><sub>内置 4 角色 + 自由新建自定义调度角色，独立配置首选模型与有序 Fallback 容灾链</sub>
+</td>
+<td width="50%" align="center" valign="top">
+  <a href="assets/readme/preview-breaker-sandbox.png"><img src="assets/readme/preview-breaker-sandbox.png" alt="断路器与执行手沙箱策略" width="100%"></a>
+  <br><strong>断路器与沙箱默认策略</strong>
+  <br><sub>实时健康监控、失败熔断阈值与冷却期，以及默认权限模式、步数上限与越界读写防护</sub>
 </td>
 </tr>
 </table>
