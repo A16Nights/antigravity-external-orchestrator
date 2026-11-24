@@ -142,7 +142,20 @@
       white-space: nowrap;
     }
     .tab:hover { color: var(--text); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .tab.active,
+    .tabs button.tab.active,
+    .tabs button.tab.active:hover {
+      background: var(--neko-grad, linear-gradient(135deg, #2563eb 0%, #3b82f6 58%, #7c3aed 100%)) !important;
+      border-color: rgba(147, 197, 253, 0.75) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+    }
+    .tabs button.tab.active .badge {
+      background: rgba(255, 255, 255, 0.22) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.38) !important;
+    }
 
     main { max-width: 1080px; margin: 0 auto; padding: 16px; }
     .hidden { display: none !important; }
@@ -295,16 +308,20 @@
       cursor: pointer;
     }
     .chip.default-chip { border-color: var(--ok); background: rgba(61, 220, 151, 0.14); color: var(--ok); }
-    .chip button {
-      border: none;
-      background: transparent;
-      color: var(--muted);
+    .chip button,
+    .chip button.link-btn {
+      border: none !important;
+      background: transparent !important;
+      color: var(--muted) !important;
       cursor: pointer;
-      padding: 0 2px;
+      padding: 0 2px !important;
       font-size: 13px;
       line-height: 1;
+      border-radius: 4px !important;
+      box-shadow: none !important;
     }
-    .chip button:hover { color: var(--danger); }
+    .chip button:hover,
+    .chip button.link-btn:hover { color: var(--danger) !important; background: rgba(244, 63, 94, 0.14) !important; }
 
     /* Runs list */
     .run-card {
@@ -1366,7 +1383,7 @@
           modalDefaultModel = m;
           renderModalModels();
         };
-        chip.innerHTML = `<span>${isDef ? "★ " : ""}${escapeHtml(m)}</span><button type="button" title="移除">×</button>`;
+        chip.innerHTML = `<span>${isDef ? "★ " : ""}${escapeHtml(m)}</span><button type="button" class="link-btn" title="移除">×</button>`;
         chip.querySelector("button").onclick = () => {
           modalModels = modalModels.filter((x) => x !== m);
           if (modalDefaultModel === m) modalDefaultModel = modalModels[0] || "";
