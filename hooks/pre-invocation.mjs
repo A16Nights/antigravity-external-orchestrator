@@ -5,12 +5,10 @@ import path from "node:path";
 import { OrchestratorStore } from "../lib/store.mjs";
 import { isExternalModel } from "../lib/external-model-guard.mjs";
 
-const DEDUP_FILE = path.join(
-  process.env.USERPROFILE || os.homedir(),
-  ".gemini",
-  "external-orchestrator",
-  "reinforce-dedup.json"
-);
+const DATA_DIR = process.env.EXTERNAL_ORCHESTRATOR_DATA_DIR
+  ? path.resolve(process.env.EXTERNAL_ORCHESTRATOR_DATA_DIR)
+  : path.join(process.env.USERPROFILE || os.homedir(), ".gemini", "external-orchestrator");
+const DEDUP_FILE = path.join(DATA_DIR, "reinforce-dedup.json");
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -36,7 +34,9 @@ function shouldSkipSameTurn(input) {
     }
     if (state.lastKey === key) return true;
     fs.mkdirSync(path.dirname(DEDUP_FILE), { recursive: true });
-    fs.writeFileSync(DEDUP_FILE, JSON.stringify({ lastKey: key, updatedAt: Date.now() }), "utf8");
+    const tmp = `${DEDUP_FILE}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify({ lastKey: key, updatedAt: Date.now() }), "utf8");
+    fs.renameSync(tmp, DEDUP_FILE);
     return false;
   } catch {
     return false;
