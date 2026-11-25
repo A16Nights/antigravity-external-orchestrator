@@ -13,7 +13,7 @@ description: >-
 本插件让 Antigravity 作为**主规划手（Orchestrator）**只做轻量规划、任务拆解与最终抽查验收，并主动通过 MCP 工具把耗费大量 Token 的具体执行工作（代码编写、多文件读取调研、命令排查、长文本生成）派发给外部高性价比模型（如 DeepSeek、本地聚合网关或其他 OpenAI/Anthropic 兼容 API），最大限度节省主脑 Token 额度与上下文窗口。
 
 ## 控制台面板与配置路径
-- 右侧可视化面板：`[苍蓝协奏台](sidecar://external-orchestrator/console/)`
+- 右侧可视化面板：`[苍蓝协奏台](sidecar://external-orchestrator/console/)`（Antigravity 2.35.1+ 回复含该链接会自动弹开侧栏，仅在用户需要查看或配置渠道时输出）
 - 持久化配置文件：`~/.gemini/external-orchestrator/config.json`（不同设备自动解析各自用户目录）
 - 所有 MCP 工具返回均已自动脱敏，不会暴露明文 API Key；如需修改密钥请引导至控制台 UI 或配置文件。
 
