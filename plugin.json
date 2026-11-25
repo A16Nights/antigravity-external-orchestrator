@@ -1,13 +1,18 @@
 {
-  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "external-orchestrator",
   "displayName": "苍蓝协奏台",
-  "version": "1.4.5",
-  "logo": "assets/logo.svg",
+  "version": "1.4.6",
   "description": "苍蓝协奏台（External Orchestrator）— 多渠道外部模型协同调度插件：由主脑负责规划与验收，自动委派 DeepSeek / OpenAI / Anthropic / 本地网关等高性价比模型执行多步文件读写、终端命令与文本生成；支持内置与自定义调度角色增删改（含专属 System Prompt 与默认权限）、Fallback 容灾链、断路器、实时进度监控（显示调度角色名称）及独立归档箱。",
+  "logo": "assets/logo.svg",
   "suggestedPrompts": [
     "列出当前已配置的外部执行手模型渠道与路由状态",
     "把指定目录下的文件检查与修改任务派发给 DeepSeek 执行手处理",
     "查看最近的外部执行手运行记录并打开苍蓝协奏台"
-  ]
+  ],
+  "author": {
+    "name": "A16Nights",
+    "url": "https://github.com/A16Nights"
+  },
+  "homepage": "https://github.com/A16Nights/antigravity-external-orchestrator",
+  "repository": "https://github.com/A16Nights/antigravity-external-orchestrator"
 }
